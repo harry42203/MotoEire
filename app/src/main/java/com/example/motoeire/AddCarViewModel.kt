@@ -1,4 +1,5 @@
 package com.example.motoeire
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -27,6 +28,14 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
         motorTaxDate = System.currentTimeMillis()
     }
     fun saveCar(onNavigateBack: () -> Unit) {
+        if (registration.isBlank()) {
+            // Show error - registration is required
+            return
+        }
+        if (nctDate == null || motorTaxDate == null) {
+            // Show error - dates are required
+            return
+        }
         viewModelScope.launch {
             val newCar = Car(
                 nickname = nickname.ifBlank { "My Car" },
@@ -37,9 +46,14 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
                 nctRenewalDate = nctDate ?: 0L,
                 motorTaxRenewalDate = motorTaxDate ?: 0L
             )
-            repository.insertCar(newCar)
-            clearFields()
-            onNavigateBack()
+            try {
+                repository.insertCar(newCar)
+                clearFields()
+                onNavigateBack()
+            } catch (e: Exception) {
+                // Show error toast/snackbar to user
+                Log.e("AddCarViewModel", "Failed to save car", e)
+            }
         }
 
     }

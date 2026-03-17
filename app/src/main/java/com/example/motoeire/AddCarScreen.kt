@@ -60,7 +60,7 @@ fun AddCarScreen(
             OutlinedTextField(
                 value = viewModel.nickname,
                 onValueChange = { viewModel.nickname = it },
-                label = { Text("Car Nickname)") },
+                label = { Text("Car Nickname") },
                 placeholder = { Text("e.g. My Golf, My Car") },
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier.fillMaxWidth()

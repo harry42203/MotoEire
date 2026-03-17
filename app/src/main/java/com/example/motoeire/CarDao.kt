@@ -4,6 +4,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -23,4 +24,7 @@ interface CarDao {
 
     @Delete
     suspend fun delete(car: Car)
+
+    @Update
+    suspend fun updateCar(car: Car)
 }

@@ -85,7 +85,17 @@ fun MotoEireApp(repository: CarRepository) {
             )
         }
         Screen.EditCar -> {
-            // TODO: Implement EditCarScreen
+            // ✅ NEW - EditCarScreen
+            if (selectedCarId != null) {
+                val detailsViewModel: GarageViewModel = viewModel(factory = factory)
+                val editViewModel: AddCarViewModel = viewModel(factory = factory)
+                EditCarScreen(
+                    carId = selectedCarId!!,
+                    viewModel = detailsViewModel,
+                    editViewModel = editViewModel,
+                    onNavigateBack = { goBack() }
+                )
+            }
         }
         Screen.Details -> {
             // ✅ UNCOMMENTED - Details screen

@@ -36,4 +36,9 @@
                 }
             }
         }
+        fun updateCar(car: Car) {
+            viewModelScope.launch {
+                repository.updateCar(car)
+            }
+        }
     }

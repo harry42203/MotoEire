@@ -14,7 +14,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +44,9 @@ fun DetailsScreen(
     val car = cars.find { it.id == carId }
     val context = LocalContext.current
 
+    // ✅ NEW - Delete confirmation dialog state
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     if (car == null) {
         // Car not found
         Box(
@@ -51,6 +56,21 @@ fun DetailsScreen(
             Text("Car not found")
         }
         return
+    }
+
+    // ✅ NEW - Delete confirmation dialog
+    if (showDeleteDialog) {
+        DeleteConfirmationDialog(
+            carName = car.nickname,
+            onConfirmDelete = {
+                viewModel.deleteCar(car)
+                showDeleteDialog = false
+                onDeleteClick()
+            },
+            onDismiss = {
+                showDeleteDialog = false
+            }
+        )
     }
 
     Scaffold(
@@ -73,12 +93,9 @@ fun DetailsScreen(
                             contentDescription = "Edit Car"
                         )
                     }
-                    // ✅ Delete button
+                    // ✅ Delete button - Now shows confirmation
                     IconButton(onClick = {
-                        // Delete the car asynchronously
-                        viewModel.deleteCar(car)
-                        // Navigate back after a small delay to allow deletion
-                        onDeleteClick()
+                        showDeleteDialog = true  // Show dialog instead of immediate delete
                     }) {
                         Icon(
                             imageVector = Icons.Outlined.Delete,
@@ -211,6 +228,60 @@ fun DetailsScreen(
             }
         }
     }
+}
+
+// ✅ NEW - Delete Confirmation Dialog
+@Composable
+fun DeleteConfirmationDialog(
+    carName: String,
+    onConfirmDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Delete Vehicle?",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Are you sure you want to delete \"$carName\"?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "This action cannot be undone. All vehicle information including renewal dates and photos will be permanently removed.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirmDelete,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Delete")
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+        textContentColor = MaterialTheme.colorScheme.onSurface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface
+    )
 }
 
 // ✅ Helper composable for displaying details

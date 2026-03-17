@@ -88,15 +88,16 @@ fun MotoEireApp(repository: CarRepository) {
             // TODO: Implement EditCarScreen
         }
         Screen.Details -> {
-            // ✅ NEW - Details screen
+            // ✅ UNCOMMENTED - Details screen
             if (selectedCarId != null) {
                 val viewModel: GarageViewModel = viewModel(factory = factory)
-                // TODO: Create DetailsScreen composable
-                // DetailsScreen(
-                //     carId = selectedCarId!!,
-                //     viewModel = viewModel,
-                //     onNavigateBack = { goBack() }
-                // )
+                DetailsScreen(
+                    carId = selectedCarId!!,
+                    viewModel = viewModel,
+                    onNavigateBack = { goBack() },
+                    onEditClick = { navigate(Screen.EditCar) },  // TODO: Implement edit
+                    onDeleteClick = { goBack() }  // Go back to dashboard after delete
+                )
             }
         }
     }

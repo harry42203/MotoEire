@@ -1,0 +1,144 @@
+package com.example.motoeire
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddCarScreen(
+    viewModel: AddCarViewModel,
+    onNavigateBack: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Add Vehicle") },
+                // This adds the "X" button to the top left
+                navigationIcon = {
+                    IconButton(onClick = {
+                        viewModel.clearFields() // Reset the form
+                        onNavigateBack()        // Go back to the garage
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close"
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Expressive Typography
+            Text(
+                text = "Add Your Vehicle",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            OutlinedTextField(
+                value = viewModel.nickname,
+                onValueChange = { viewModel.nickname = it },
+                label = { Text("Car Nickname)") },
+                placeholder = { Text("e.g. My Golf, My Car") },
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+            // Standard Text Inputs
+            OutlinedTextField(
+                value = viewModel.registration,
+                onValueChange = { viewModel.registration = it },
+                label = { Text("Registration Number") },
+                placeholder = { Text("e.g. 12-D-12345") },
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = viewModel.insuranceProvider,
+                onValueChange = { viewModel.insuranceProvider = it },
+                label = { Text("Insurance Provider") },
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = viewModel.policyNumber,
+                onValueChange = { viewModel.policyNumber = it },
+                label = { Text("Policy Number") },
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Date Pickers
+            DatePickerField(
+                label = "NCT Renewal Date",
+                selectedDateMillis = viewModel.nctDate,
+                onDateSelected = { viewModel.nctDate = it }
+            )
+
+            DatePickerField(
+                label = "Motor Tax Renewal Date",
+                selectedDateMillis = viewModel.motorTaxDate,
+                onDateSelected = { viewModel.motorTaxDate = it }
+            )
+
+            Spacer(modifier = Modifier.weight(1f)) // Pushes the rest to the bottom
+
+            // Save Button
+            Button(
+                onClick = { viewModel.saveCar(onNavigateBack) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(100) // Pill shape for expressive M3
+            ) {
+                Text("Save Vehicle", style = MaterialTheme.typography.titleMedium)
+            }
+
+            // Privacy Banner
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Shield,
+                    contentDescription = "Privacy Shield",
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Your vehicle data is completely private\nand stored locally on your device.",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.outline,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}

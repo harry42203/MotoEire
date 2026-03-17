@@ -6,6 +6,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Image  // ✅ NEW
+import androidx.compose.material.icons.outlined.PhotoCamera  // ✅ NEW
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +16,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,7 +32,22 @@ fun AddCarScreen(
     onNavigateBack: () -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    val imageManager = remember { ImageManager(context) }
 
+    // ✅ NEW - Image picker launcher
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val savedPath = imageManager.saveImageFromUri(it)
+            if (savedPath != null) {
+                viewModel.imagePath = savedPath
+            }
+        }
+    }
+
+    // Show snackbar when error occurs
     LaunchedEffect(viewModel.errorMessage) {
         viewModel.errorMessage?.let {
             snackbarHostState.showSnackbar(
@@ -33,10 +58,10 @@ fun AddCarScreen(
         }
     }
 
-    // ✅ Simple - just call the callback
+    // Handle system back button
     BackHandler {
         viewModel.clearFields()
-        onNavigateBack()  // Stack handles the navigation
+        onNavigateBack()
     }
 
     Scaffold(
@@ -46,7 +71,7 @@ fun AddCarScreen(
                 navigationIcon = {
                     IconButton(onClick = {
                         viewModel.clearFields()
-                        onNavigateBack()  // Stack handles the navigation
+                        onNavigateBack()
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -69,6 +94,92 @@ fun AddCarScreen(
         ) {
 
             Spacer(modifier = Modifier.height(8.dp))
+
+            // ✅ NEW - Image Picker Section
+            Text(
+                text = "Car Photo",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Image preview or placeholder
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                if (viewModel.imagePath != null) {
+                    // Show selected image
+                    AsyncImage(
+                        model = viewModel.imagePath,
+                        contentDescription = "Car photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Show placeholder
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Image,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
+
+            // ✅ NEW - Image picker buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Image,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Gallery")
+                }
+
+                OutlinedButton(
+                    onClick = { /* TODO: Add camera functionality */ },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.PhotoCamera,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Camera")
+                }
+            }
+
+            // ✅ NEW - Clear image button (only show if image selected)
+            if (viewModel.imagePath != null) {
+                TextButton(
+                    onClick = { viewModel.imagePath = null },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Remove Image", color = MaterialTheme.colorScheme.error)
+                }
+            }
+
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Expressive Typography
             Text(

@@ -1,41 +1,35 @@
 package com.example.motoeire
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import coil.compose.AsyncImage
 import java.util.concurrent.TimeUnit
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyGarageScreen(
     viewModel: GarageViewModel,
-    onAddCarClick: () -> Unit
+    onAddCarClick: () -> Unit,
+    onCarCardClick: (carId: Int) -> Unit  // ✅ NEW - Navigate to details
 ) {
-    // This collects the Flow from your database and triggers a UI update when it changes
     val cars by viewModel.carsList.collectAsState()
 
     Scaffold(
@@ -77,18 +71,20 @@ fun MyGarageScreen(
                 )
             }
         } else {
-            // The List of Cars
-            LazyColumn(
+            // ✅ NEW - Grid layout for gallery
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),  // 2 columns
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(cars) { car ->
-                    CarCard(
+                    CarGalleryCard(
                         car = car,
-                        viewModel = viewModel // Pass the viewModel here
+                        onClick = { onCarCardClick(car.id) }
                     )
                 }
             }
@@ -96,111 +92,139 @@ fun MyGarageScreen(
     }
 }
 
+// ✅ NEW - Beautiful gallery card with image and status badge
 @Composable
-fun CarCard(car: Car, viewModel: GarageViewModel) {
-    val context = LocalContext.current
+fun CarGalleryCard(
+    car: Car,
+    onClick: () -> Unit
+) {
+    val renewalStatus = getWorstRenewalStatus(
+        insuranceDate = car.insuranceRenewalDate,
+        nctDate = car.nctRenewalDate,
+        motorTaxDate = car.motorTaxRenewalDate
+    )
 
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onClick() },  // ✅ FIXED - Changed from onClick to .clickable
+        color = MaterialTheme.colorScheme.surfaceVariant
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                // Left Side: Nickname and Reg
-                Column {
-                    Text(text = car.nickname, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text(text = car.registrationNumber, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-
-                // Right Side: Delete Button
-                IconButton(onClick = { viewModel.deleteCar(car) }) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = "Delete Car",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
+        Box {
+            // ✅ Background image
+            if (car.imagePath != null) {
+                AsyncImage(
+                    model = car.imagePath,
+                    contentDescription = "Car photo",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                // Placeholder
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.tertiaryContainer
+                ) {}
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+            // ✅ Dark overlay for text readability
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = Color.Black.copy(alpha = 0.3f)
+            ) {}
 
-            // Insurance Info (Kept as standard InfoRow)
-            InfoRow(
-                icon = Icons.Outlined.Security,
-                label = "Insurance",
-                value = "${car.insuranceProvider} (Pol: ${car.insurancePolicyNumber})"
+            // ✅ Car name - Top left
+            Text(
+                text = car.nickname,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(12.dp)
             )
 
-            // 2. Replaced old Dates with Smart RenewalRows!
-            RenewalRow(
-                icon = Icons.Outlined.CalendarMonth,
-                label = "Insurance Renewal",
-                dateMillis = car.insuranceRenewalDate,
-                buttonText = "Renew Insurance",
-                url = "https://www.google.com/search?q=car+insurance+renewal",  // Or your specific URL
-                context = context
+            // ✅ Status badge - Top right
+            StatusBadge(
+                status = renewalStatus,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
             )
 
-            RenewalRow(
-                icon = Icons.Outlined.CalendarMonth,
-                label = "NCT Renewal",
-                dateMillis = car.nctRenewalDate,
-                buttonText = "Book NCT",
-                url = "https://www.ncts.ie/?regNo=${car.registrationNumber}",
-                context = context
-            )
-
-            RenewalRow(
-                icon = Icons.Outlined.CalendarMonth,
-                label = "Motor Tax",
-                dateMillis = car.motorTaxRenewalDate,
-                buttonText = "Pay Tax",
-                url = "https://www.motortax.ie/OMT/omt.do?regno=${car.registrationNumber}",
-                context = context
+            // ✅ Registration at bottom
+            Text(
+                text = car.registrationNumber,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.9f),
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(12.dp)
             )
         }
     }
 }
 
-// A reusable helper component for the rows inside the card
+// ✅ NEW - Status badge component
 @Composable
-fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.size(20.dp)
+fun StatusBadge(
+    status: RenewalStatus,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = when (status) {
+        RenewalStatus.OK -> Color(0xFF4CAF50).copy(alpha = 0.9f)  // Green
+        RenewalStatus.DUE_SOON -> Color(0xFFF57C00).copy(alpha = 0.9f)  // Amber
+        RenewalStatus.OVERDUE -> Color(0xFFD32F2F).copy(alpha = 0.9f)  // Red
+    }
+
+    val label = when (status) {
+        RenewalStatus.OK -> "In Date"
+        RenewalStatus.DUE_SOON -> "Due"
+        RenewalStatus.OVERDUE -> "Overdue"
+    }
+
+    Surface(
+        color = backgroundColor,
+        shape = RoundedCornerShape(8.dp),
+        modifier = modifier
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Medium
-            )
-        }
+    }
+}
+
+// ✅ NEW - Helper function to get worst status across all renewal dates
+fun getWorstRenewalStatus(
+    insuranceDate: Long,
+    nctDate: Long,
+    motorTaxDate: Long
+): RenewalStatus {
+    val statuses = listOf(
+        checkRenewalStatus(insuranceDate),
+        checkRenewalStatus(nctDate),
+        checkRenewalStatus(motorTaxDate)
+    )
+
+    // Priority: OVERDUE > DUE_SOON > OK
+    return when {
+        RenewalStatus.OVERDUE in statuses -> RenewalStatus.OVERDUE
+        RenewalStatus.DUE_SOON in statuses -> RenewalStatus.DUE_SOON
+        else -> RenewalStatus.OK
     }
 }
 
 // Helper to convert the Long timestamp back to a readable date
 fun formatTimestamp(millis: Long): String {
     if (millis == 0L) return "Not set"
-    val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-    return formatter.format(Date(millis))
+    val formatter = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
+    return formatter.format(java.util.Date(millis))
 }
 
 // Defines the three possible states for a renewal date
@@ -210,7 +234,7 @@ enum class RenewalStatus {
 
 // Calculates the status based on the saved timestamp
 fun checkRenewalStatus(dateMillis: Long): RenewalStatus {
-    if (dateMillis == 0L) return RenewalStatus.OK // Ignore if the user hasn't set a date yet
+    if (dateMillis == 0L) return RenewalStatus.OK
 
     val todayMillis = System.currentTimeMillis()
     val diffMillis = dateMillis - todayMillis
@@ -220,69 +244,5 @@ fun checkRenewalStatus(dateMillis: Long): RenewalStatus {
         diffDays < 0 -> RenewalStatus.OVERDUE
         diffDays in 0..30 -> RenewalStatus.DUE_SOON
         else -> RenewalStatus.OK
-    }
-}
-// A custom amber color for the 'Due Soon' warning
-val WarningAmber = Color(0xFFF57C00)
-
-@Composable
-fun RenewalRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    dateMillis: Long,
-    buttonText: String,
-    url: String,
-    context: Context // Needed to launch the browser
-) {
-    val status = checkRenewalStatus(dateMillis)
-
-    // Dynamically set the text color based on the calculated status
-    val valueColor = when (status) {
-        RenewalStatus.OVERDUE -> MaterialTheme.colorScheme.error // Standard M3 Red
-        RenewalStatus.DUE_SOON -> WarningAmber
-        RenewalStatus.OK -> MaterialTheme.colorScheme.onSurface
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween // Pushes the button to the far right edge
-    ) {
-        // Left side: Icon and Text
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = formatTimestamp(dateMillis),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = valueColor,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
-        // Right side: Action Button (Only visible if Due Soon or Overdue)
-        if (status == RenewalStatus.DUE_SOON || status == RenewalStatus.OVERDUE) {
-            OutlinedButton(
-                onClick = {
-                    // Standard Android Intent to open a URL
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                    context.startActivity(intent)
-                }
-            ) {
-                Text(buttonText)
-            }
-        }
     }
 }

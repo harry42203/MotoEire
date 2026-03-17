@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
 fun MotoEireApp(repository: CarRepository) {
     // ✅ Use mutableStateOf to make it reactive
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Dashboard) }
+    var selectedCarId by remember { mutableStateOf<Int?>(null) }  // ✅ NEW - Track selected car
 
     val navigationStack = remember {
         mutableListOf<Screen>(Screen.Dashboard)
@@ -47,19 +48,19 @@ fun MotoEireApp(repository: CarRepository) {
     // ✅ System back button handler
     BackHandler(enabled = navigationStack.size > 1) {
         navigationStack.removeAt(navigationStack.size - 1)
-        currentScreen = navigationStack.last()  // ✅ Update state to trigger recomposition
+        currentScreen = navigationStack.last()
     }
 
     // ✅ Navigation functions
     val navigate = { screen: Screen ->
         navigationStack.add(screen)
-        currentScreen = screen  // ✅ KEY FIX - Update state so UI recomposes
+        currentScreen = screen
     }
 
     val goBack = {
         if (navigationStack.size > 1) {
             navigationStack.removeAt(navigationStack.size - 1)
-            currentScreen = navigationStack.last()  // ✅ Update state to trigger recomposition
+            currentScreen = navigationStack.last()
         }
     }
 
@@ -69,7 +70,11 @@ fun MotoEireApp(repository: CarRepository) {
             val viewModel: GarageViewModel = viewModel(factory = factory)
             MyGarageScreen(
                 viewModel = viewModel,
-                onAddCarClick = { navigate(Screen.AddCar) }
+                onAddCarClick = { navigate(Screen.AddCar) },
+                onCarCardClick = { carId ->  // ✅ NEW
+                    selectedCarId = carId
+                    navigate(Screen.Details)
+                }
             )
         }
         Screen.AddCar -> {
@@ -83,7 +88,16 @@ fun MotoEireApp(repository: CarRepository) {
             // TODO: Implement EditCarScreen
         }
         Screen.Details -> {
-            // TODO: Implement DetailsScreen
+            // ✅ NEW - Details screen
+            if (selectedCarId != null) {
+                val viewModel: GarageViewModel = viewModel(factory = factory)
+                // TODO: Create DetailsScreen composable
+                // DetailsScreen(
+                //     carId = selectedCarId!!,
+                //     viewModel = viewModel,
+                //     onNavigateBack = { goBack() }
+                // )
+            }
         }
     }
 }

@@ -6,6 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
 
@@ -15,7 +17,6 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
     var insuranceProvider by mutableStateOf("")
     var policyNumber by mutableStateOf("")
     var errorMessage by mutableStateOf<String?>(null)
-
     // Dates held as Longs (Unix timestamps) to match your Room Entity
     var nctDate by mutableStateOf<Long?>(null)
     var motorTaxDate by mutableStateOf<Long?>(null)
@@ -28,34 +29,44 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
         nctDate = System.currentTimeMillis()
         motorTaxDate = System.currentTimeMillis()
     }
+    fun clearError() {
+        errorMessage = null
+    }
     fun saveCar(onNavigateBack: () -> Unit) {
-        if (registration.isBlank()) {
-            errorMessage = "Registration number is required"
-            return
+        errorMessage = null  // Clear previous errors
+
+        when {
+            registration.isBlank() -> {
+                errorMessage = "Please enter a registration number"
+                return
+            }
+            nctDate == null -> {
+                errorMessage = "Please select an NCT renewal date"
+                return
+            }
+            motorTaxDate == null -> {
+                errorMessage = "Please select a Motor Tax renewal date"
+                return
+            }
         }
-        if (nctDate == null || motorTaxDate == null) {
-            errorMessage = "Dates are required"
-            return
-        }
+
         viewModelScope.launch {
-            val newCar = Car(
-                nickname = nickname.ifBlank { "My Car" },
-                registrationNumber = registration,
-                insuranceProvider = insuranceProvider,
-                insurancePolicyNumber = policyNumber,
-                // Defaulting to 0 if null, though you might want validation here later
-                nctRenewalDate = nctDate ?: 0L,
-                motorTaxRenewalDate = motorTaxDate ?: 0L
-            )
             try {
+                val newCar = Car(
+                    nickname = nickname.ifBlank { "My Car" },
+                    registrationNumber = registration,
+                    insuranceProvider = insuranceProvider,
+                    insurancePolicyNumber = policyNumber,
+                    nctRenewalDate = nctDate ?: 0L,
+                    motorTaxRenewalDate = motorTaxDate ?: 0L
+                )
                 repository.insertCar(newCar)
                 clearFields()
                 onNavigateBack()
             } catch (e: Exception) {
-                // Show error toast/snackbar to user
+                errorMessage = "Failed to save car: ${e.message}"
                 Log.e("AddCarViewModel", "Failed to save car", e)
             }
         }
-
     }
 }

@@ -13,32 +13,48 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddCarScreen(
     viewModel: AddCarViewModel,
     onNavigateBack: () -> Unit
-) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Add Vehicle") },
-                // This adds the "X" button to the top left
-                navigationIcon = {
-                    IconButton(onClick = {
-                        viewModel.clearFields() // Reset the form
-                        onNavigateBack()        // Go back to the garage
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close"
-                        )
-                    }
-                }
-            )
+    ) {
+        val snackbarHostState = remember { SnackbarHostState() }
+
+        // Show snackbar when error occurs
+        LaunchedEffect(viewModel.errorMessage) {
+            viewModel.errorMessage?.let {
+                snackbarHostState.showSnackbar(
+                    message = it,
+                    duration = SnackbarDuration.Long
+                )
+                viewModel.clearError()  // Clear error after showing
+            }
         }
-    ) { paddingValues ->
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Add Vehicle") },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            viewModel.clearFields()
+                            onNavigateBack()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close"
+                            )
+                        }
+                    }
+                )
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }  // ✅ ADD THIS
+        ) { paddingValues ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()

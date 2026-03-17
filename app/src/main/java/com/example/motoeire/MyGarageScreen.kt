@@ -8,11 +8,12 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.*
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,7 +31,7 @@ fun MyGarageScreen(
     onAddCarClick: () -> Unit,
     onCarCardClick: (carId: Int) -> Unit
 ) {
-    val cars by viewModel.carsList.collectAsState()  // ✅ Collects StateFlow
+    val cars by viewModel.carsList.collectAsState()
 
     Scaffold(
         topBar = {
@@ -99,7 +100,7 @@ fun MyGarageScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(cars, key = { car -> car.id }) { car ->  // ✅ Add key for better recomposition
+                items(cars, key = { car -> car.id }) { car ->
                     CarGalleryCard(
                         car = car,
                         onClick = { onCarCardClick(car.id) }
@@ -110,7 +111,7 @@ fun MyGarageScreen(
     }
 }
 
-// ✅ NEW - Beautiful gallery card with image and status badge
+// ✅ FIXED - Beautiful gallery card with image and status badge
 @Composable
 fun CarGalleryCard(
     car: Car,
@@ -122,12 +123,17 @@ fun CarGalleryCard(
         motorTaxDate = car.motorTaxRenewalDate
     )
 
+    // ✅ FIXED - Use semanticsModifier instead of .clickable with Surface
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
             .clip(RoundedCornerShape(16.dp))
-            .clickable { onClick() },  // ✅ FIXED - Changed from onClick to .clickable
+            .clickable(
+                enabled = true,
+                indication = ripple(),  // ✅ Explicitly provide ripple
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+            ) { onClick() },
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Box {
@@ -185,7 +191,7 @@ fun CarGalleryCard(
     }
 }
 
-// ✅ NEW - Status badge component
+// ✅ Status badge component
 @Composable
 fun StatusBadge(
     status: RenewalStatus,
@@ -218,7 +224,7 @@ fun StatusBadge(
     }
 }
 
-// ✅ NEW - Helper function to get worst status across all renewal dates
+// ✅ Helper function to get worst status across all renewal dates
 fun getWorstRenewalStatus(
     insuranceDate: Long,
     nctDate: Long,

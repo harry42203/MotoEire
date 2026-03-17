@@ -79,6 +79,7 @@ dependencies {
     implementation(libs.material)
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation(libs.androidx.foundation)
+    implementation(libs.androidx.material3)
 
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2024.02.02")

@@ -28,9 +28,9 @@ import java.util.concurrent.TimeUnit
 fun MyGarageScreen(
     viewModel: GarageViewModel,
     onAddCarClick: () -> Unit,
-    onCarCardClick: (carId: Int) -> Unit  // ✅ NEW - Navigate to details
+    onCarCardClick: (carId: Int) -> Unit
 ) {
-    val cars by viewModel.carsList.collectAsState()
+    val cars by viewModel.carsList.collectAsState()  // ✅ Collects StateFlow
 
     Scaffold(
         topBar = {
@@ -63,17 +63,35 @@ fun MyGarageScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Your garage is empty.\nTap + to add a vehicle.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Your garage is empty.",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Tap the + button to add a vehicle.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
             }
         } else {
-            // ✅ NEW - Grid layout for gallery
+            // ✅ Grid layout for gallery
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),  // 2 columns
+                columns = GridCells.Fixed(2),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
@@ -81,7 +99,7 @@ fun MyGarageScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(cars) { car ->
+                items(cars, key = { car -> car.id }) { car ->  // ✅ Add key for better recomposition
                     CarGalleryCard(
                         car = car,
                         onClick = { onCarCardClick(car.id) }

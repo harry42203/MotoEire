@@ -105,7 +105,7 @@ fun MotoEireApp(repository: CarRepository) {
                     carId = selectedCarId!!,
                     viewModel = viewModel,
                     onNavigateBack = { goBack() },
-                    onEditClick = { navigate(Screen.EditCar) },  // TODO: Implement edit
+                    onEditClick = { navigate(Screen.EditCar) },
                     onDeleteClick = { goBack() }  // Go back to dashboard after delete
                 )
             }

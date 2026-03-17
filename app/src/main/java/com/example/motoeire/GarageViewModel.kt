@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.File
 
 class GarageViewModel(private val repository: CarRepository) : ViewModel() {
     var deleteError by mutableStateOf<String?>(null)
@@ -25,6 +26,9 @@ class GarageViewModel(private val repository: CarRepository) : ViewModel() {
     fun deleteCar(car: Car) {
         viewModelScope.launch {
             try {
+                if (!car.imagePath.isNullOrEmpty()) {
+                    File(car.imagePath).delete()
+                }
                 repository.delete(car)
                 Log.d("GarageViewModel", "Car deleted successfully")
             } catch (e: Exception) {

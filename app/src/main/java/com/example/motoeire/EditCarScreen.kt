@@ -222,36 +222,91 @@ fun EditCarScreen(
             )
             OutlinedTextField(
                 value = editViewModel.nickname,
-                onValueChange = { editViewModel.nickname = it },
+                onValueChange = { newValue ->
+                    // ✅ NEW - Limit input to max length
+                    if (newValue.length <= AddCarViewModel.MAX_NICKNAME_LENGTH) {
+                        editViewModel.nickname = newValue
+                    }
+                },
                 label = { Text("Car Nickname") },
                 placeholder = { Text("e.g. My Golf, My Car") },
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {  // ✅ NEW - Show character count
+                    Text(
+                        text = "${editViewModel.nickname.length}/${AddCarViewModel.MAX_NICKNAME_LENGTH}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (editViewModel.nickname.length > AddCarViewModel.MAX_NICKNAME_LENGTH - 10)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             )
-            // Standard Text Inputs
+
+// Registration Number
             OutlinedTextField(
                 value = editViewModel.registration,
-                onValueChange = { editViewModel.registration = it },
+                onValueChange = { newValue ->
+                    // ✅ NEW - Limit input to max length
+                    if (newValue.length <= AddCarViewModel.MAX_REGISTRATION_LENGTH) {
+                        editViewModel.registration = newValue
+                    }
+                },
                 label = { Text("Registration Number") },
                 placeholder = { Text("e.g. 12-D-12345") },
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {  // ✅ NEW - Show character count
+                    Text(
+                        text = "${editViewModel.registration.length}/${AddCarViewModel.MAX_REGISTRATION_LENGTH}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (editViewModel.registration.length > AddCarViewModel.MAX_REGISTRATION_LENGTH - 5)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             )
 
             OutlinedTextField(
                 value = editViewModel.insuranceProvider,
-                onValueChange = { editViewModel.insuranceProvider = it },
+                onValueChange = { newValue ->
+                    // ✅ NEW - Limit input to max length
+                    if (newValue.length <= AddCarViewModel.MAX_INSURANCE_PROVIDER_LENGTH) {
+                        editViewModel.insuranceProvider = newValue
+                    }
+                },
                 label = { Text("Insurance Provider") },
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {  // ✅ NEW - Show character count
+                    Text(
+                        text = "${editViewModel.insuranceProvider.length}/${AddCarViewModel.MAX_INSURANCE_PROVIDER_LENGTH}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             )
 
             OutlinedTextField(
                 value = editViewModel.policyNumber,
-                onValueChange = { editViewModel.policyNumber = it },
+                onValueChange = { newValue ->
+                    // ✅ NEW - Limit input to max length
+                    if (newValue.length <= AddCarViewModel.MAX_POLICY_NUMBER_LENGTH) {
+                        editViewModel.policyNumber = newValue
+                    }
+                },
                 label = { Text("Policy Number") },
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {  // ✅ NEW - Show character count
+                    Text(
+                        text = "${editViewModel.policyNumber.length}/${AddCarViewModel.MAX_POLICY_NUMBER_LENGTH}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             )
 
             // Date Pickers
@@ -278,30 +333,48 @@ fun EditCarScreen(
             // ✅ Update Button (instead of Save)
             Button(
                 onClick = {
-                    // Validate and update car
-                    if (editViewModel.registration.isBlank()) {
-                        editViewModel.errorMessage = "Please enter a registration number"
-                        return@Button
-                    }
-                    if (editViewModel.insuranceRenewalDate == null) {
-                        editViewModel.errorMessage = "Please select an insurance renewal date"
-                        return@Button
-                    }
-                    if (editViewModel.nctDate == null) {
-                        editViewModel.errorMessage = "Please select an NCT renewal date"
-                        return@Button
-                    }
-                    if (editViewModel.motorTaxDate == null) {
-                        editViewModel.errorMessage = "Please select a Motor Tax renewal date"
-                        return@Button
+                    // ✅ NEW - Add validation for length limits
+                    when {
+                        editViewModel.nickname.isNotBlank() && editViewModel.nickname.length > AddCarViewModel.MAX_NICKNAME_LENGTH -> {
+                            editViewModel.errorMessage = "Car nickname must be less than ${AddCarViewModel.MAX_NICKNAME_LENGTH} characters"
+                            return@Button
+                        }
+                        editViewModel.registration.isBlank() -> {
+                            editViewModel.errorMessage = "Please enter a registration number"
+                            return@Button
+                        }
+                        editViewModel.registration.length > AddCarViewModel.MAX_REGISTRATION_LENGTH -> {
+                            editViewModel.errorMessage = "Registration number must be less than ${AddCarViewModel.MAX_REGISTRATION_LENGTH} characters"
+                            return@Button
+                        }
+                        editViewModel.insuranceProvider.length > AddCarViewModel.MAX_INSURANCE_PROVIDER_LENGTH -> {
+                            editViewModel.errorMessage = "Insurance provider name must be less than ${AddCarViewModel.MAX_INSURANCE_PROVIDER_LENGTH} characters"
+                            return@Button
+                        }
+                        editViewModel.policyNumber.length > AddCarViewModel.MAX_POLICY_NUMBER_LENGTH -> {
+                            editViewModel.errorMessage = "Policy number must be less than ${AddCarViewModel.MAX_POLICY_NUMBER_LENGTH} characters"
+                            return@Button
+                        }
+                        editViewModel.insuranceRenewalDate == null -> {
+                            editViewModel.errorMessage = "Please select an insurance renewal date"
+                            return@Button
+                        }
+                        editViewModel.nctDate == null -> {
+                            editViewModel.errorMessage = "Please select an NCT renewal date"
+                            return@Button
+                        }
+                        editViewModel.motorTaxDate == null -> {
+                            editViewModel.errorMessage = "Please select a Motor Tax renewal date"
+                            return@Button
+                        }
                     }
 
                     // Update the car in the database
                     val updatedCar = car.copy(
-                        nickname = editViewModel.nickname.ifBlank { "My Car" },
-                        registrationNumber = editViewModel.registration,
-                        insuranceProvider = editViewModel.insuranceProvider,
-                        insurancePolicyNumber = editViewModel.policyNumber,
+                        nickname = editViewModel.nickname.ifBlank { "My Car" }.trim(),  // ✅ NEW - Trim whitespace
+                        registrationNumber = editViewModel.registration.trim(),  // ✅ NEW - Trim whitespace
+                        insuranceProvider = editViewModel.insuranceProvider.trim(),  // ✅ NEW - Trim whitespace
+                        insurancePolicyNumber = editViewModel.policyNumber.trim(),  // ✅ NEW - Trim whitespace
                         insuranceRenewalDate = editViewModel.insuranceRenewalDate ?: 0L,
                         nctRenewalDate = editViewModel.nctDate ?: 0L,
                         motorTaxRenewalDate = editViewModel.motorTaxDate ?: 0L,

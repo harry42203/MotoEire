@@ -27,6 +27,21 @@ fun SettingsScreen(
     val settings by viewModel.userSettings.collectAsState()
     var showResetDialog by remember { mutableStateOf(false) }
 
+    // ✅ NEW - Error handling
+    val resetError by remember { derivedStateOf { viewModel.resetError } }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // ✅ NEW - Show error snackbar when reset fails
+    LaunchedEffect(resetError) {
+        resetError?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Long
+            )
+            viewModel.clearResetError()
+        }
+    }
+
     // ✅ Reset confirmation dialog
     if (showResetDialog) {
         ResetDataConfirmationDialog(
@@ -54,7 +69,8 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }  // ✅ NEW
     ) { paddingValues ->
 
         Column(

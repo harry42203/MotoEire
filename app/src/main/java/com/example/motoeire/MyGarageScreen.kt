@@ -165,11 +165,15 @@ fun CarWideCard(
     car: Car,
     onClick: () -> Unit
 ) {
-    val renewalStatus = getWorstRenewalStatus(
-        insuranceDate = car.insuranceRenewalDate,
-        nctDate = car.nctRenewalDate,
-        motorTaxDate = car.motorTaxRenewalDate
-    )
+    val renewalStatus = try {
+        getWorstRenewalStatus(
+            insuranceDate = car.insuranceRenewalDate,
+            nctDate = car.nctRenewalDate,
+            motorTaxDate = car.motorTaxRenewalDate
+        )
+    } catch (e: Exception) {
+        RenewalStatus.OK  // Default to OK if error
+    }
 
     Surface(
         modifier = Modifier
@@ -259,11 +263,15 @@ fun CarListItem(
     car: Car,
     onClick: () -> Unit
 ) {
-    val renewalStatus = getWorstRenewalStatus(
-        insuranceDate = car.insuranceRenewalDate,
-        nctDate = car.nctRenewalDate,
-        motorTaxDate = car.motorTaxRenewalDate
-    )
+    val renewalStatus = try {
+        getWorstRenewalStatus(
+            insuranceDate = car.insuranceRenewalDate,
+            nctDate = car.nctRenewalDate,
+            motorTaxDate = car.motorTaxRenewalDate
+        )
+    } catch (e: Exception) {
+        RenewalStatus.OK  // Default to OK if error
+    }
 
     val statusColor = when (renewalStatus) {
         RenewalStatus.OK -> Color(0xFF4CAF50)
@@ -482,3 +490,4 @@ fun checkRenewalStatus(dateMillis: Long): RenewalStatus {
         else -> RenewalStatus.OK
     }
 }
+

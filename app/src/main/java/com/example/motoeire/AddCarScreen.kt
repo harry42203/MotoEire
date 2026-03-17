@@ -24,13 +24,14 @@ import coil.compose.AsyncImage
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddCarScreen(
     viewModel: AddCarViewModel,
     onNavigateBack: () -> Unit
+
 ) {
+
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     val imageManager = remember { ImageManager(context) }
@@ -190,36 +191,93 @@ fun AddCarScreen(
             )
             OutlinedTextField(
                 value = viewModel.nickname,
-                onValueChange = { viewModel.nickname = it },
+                onValueChange = { newValue ->
+                    // ✅ NEW - Limit input to max length
+                    if (newValue.length <= AddCarViewModel.MAX_NICKNAME_LENGTH) {
+                        viewModel.nickname = newValue
+                    }
+                },
                 label = { Text("Car Nickname") },
                 placeholder = { Text("e.g. My Golf, My Car") },
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {  // ✅ NEW - Show character count
+                    Text(
+                        text = "${viewModel.nickname.length}/${AddCarViewModel.MAX_NICKNAME_LENGTH}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (viewModel.nickname.length > AddCarViewModel.MAX_NICKNAME_LENGTH - 10)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             )
-            // Standard Text Inputs
+
+// Registration Number
             OutlinedTextField(
                 value = viewModel.registration,
-                onValueChange = { viewModel.registration = it },
+                onValueChange = { newValue ->
+                    // ✅ NEW - Limit input to max length
+                    if (newValue.length <= AddCarViewModel.MAX_REGISTRATION_LENGTH) {
+                        viewModel.registration = newValue
+                    }
+                },
                 label = { Text("Registration Number") },
                 placeholder = { Text("e.g. 12-D-12345") },
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {  // ✅ NEW - Show character count
+                    Text(
+                        text = "${viewModel.registration.length}/${AddCarViewModel.MAX_REGISTRATION_LENGTH}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (viewModel.registration.length > AddCarViewModel.MAX_REGISTRATION_LENGTH - 5)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             )
 
+// Insurance Provider
             OutlinedTextField(
                 value = viewModel.insuranceProvider,
-                onValueChange = { viewModel.insuranceProvider = it },
+                onValueChange = { newValue ->
+                    // ✅ NEW - Limit input to max length
+                    if (newValue.length <= AddCarViewModel.MAX_INSURANCE_PROVIDER_LENGTH) {
+                        viewModel.insuranceProvider = newValue
+                    }
+                },
                 label = { Text("Insurance Provider") },
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {  // ✅ NEW - Show character count
+                    Text(
+                        text = "${viewModel.insuranceProvider.length}/${AddCarViewModel.MAX_INSURANCE_PROVIDER_LENGTH}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             )
 
+// Policy Number
             OutlinedTextField(
                 value = viewModel.policyNumber,
-                onValueChange = { viewModel.policyNumber = it },
+                onValueChange = { newValue ->
+                    // ✅ NEW - Limit input to max length
+                    if (newValue.length <= AddCarViewModel.MAX_POLICY_NUMBER_LENGTH) {
+                        viewModel.policyNumber = newValue
+                    }
+                },
                 label = { Text("Policy Number") },
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {  // ✅ NEW - Show character count
+                    Text(
+                        text = "${viewModel.policyNumber.length}/${AddCarViewModel.MAX_POLICY_NUMBER_LENGTH}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             )
 
             // Date Pickers

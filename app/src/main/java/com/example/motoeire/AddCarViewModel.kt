@@ -1,4 +1,5 @@
 package com.example.motoeire
+
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +23,14 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
     // ✅ NEW - Image path
     var imagePath by mutableStateOf<String?>(null)
 
+    // ✅ NEW - Constants for validation
+    companion object {
+        const val MAX_NICKNAME_LENGTH = 50
+        const val MAX_REGISTRATION_LENGTH = 20
+        const val MAX_INSURANCE_PROVIDER_LENGTH = 50
+        const val MAX_POLICY_NUMBER_LENGTH = 30
+    }
+
     fun clearFields() {
         nickname = ""
         registration = ""
@@ -30,7 +39,8 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
         insuranceRenewalDate = null
         nctDate = null
         motorTaxDate = null
-        imagePath = null  // ✅ NEW
+        imagePath = null
+        errorMessage = null  // ✅ NEW - Clear error too
     }
 
     fun clearError() {
@@ -40,8 +50,28 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
     fun saveCar(onNavigateBack: () -> Unit) {
         errorMessage = null
         when {
+            // ✅ NEW - Validate nickname length
+            nickname.isNotBlank() && nickname.length > MAX_NICKNAME_LENGTH -> {
+                errorMessage = "Car nickname must be less than $MAX_NICKNAME_LENGTH characters"
+                return
+            }
+            // ✅ NEW - Validate registration length
             registration.isBlank() -> {
                 errorMessage = "Please enter a registration number"
+                return
+            }
+            registration.length > MAX_REGISTRATION_LENGTH -> {
+                errorMessage = "Registration number must be less than $MAX_REGISTRATION_LENGTH characters"
+                return
+            }
+            // ✅ NEW - Validate insurance provider length
+            insuranceProvider.length > MAX_INSURANCE_PROVIDER_LENGTH -> {
+                errorMessage = "Insurance provider name must be less than $MAX_INSURANCE_PROVIDER_LENGTH characters"
+                return
+            }
+            // ✅ NEW - Validate policy number length
+            policyNumber.length > MAX_POLICY_NUMBER_LENGTH -> {
+                errorMessage = "Policy number must be less than $MAX_POLICY_NUMBER_LENGTH characters"
                 return
             }
             insuranceRenewalDate == null -> {
@@ -62,15 +92,16 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
             try {
                 val newCar = Car(
                     nickname = nickname.ifBlank { "My Car" },
-                    registrationNumber = registration,
-                    insuranceProvider = insuranceProvider,
-                    insurancePolicyNumber = policyNumber,
+                    registrationNumber = registration.trim(),  // ✅ NEW - Trim whitespace
+                    insuranceProvider = insuranceProvider.trim(),  // ✅ NEW - Trim whitespace
+                    insurancePolicyNumber = policyNumber.trim(),  // ✅ NEW - Trim whitespace
                     insuranceRenewalDate = insuranceRenewalDate ?: 0L,
                     nctRenewalDate = nctDate ?: 0L,
                     motorTaxRenewalDate = motorTaxDate ?: 0L,
-                    imagePath = imagePath  // ✅ NEW
+                    imagePath = imagePath
                 )
                 repository.insertCar(newCar)
+                Log.d("AddCarViewModel", "Car saved successfully")
                 clearFields()
                 onNavigateBack()
             } catch (e: Exception) {

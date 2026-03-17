@@ -35,28 +35,32 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MotoEireApp(repository: CarRepository) {
-    // ✅ Navigation stack instead of simple enum
+    // ✅ Use mutableStateOf to make it reactive
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Dashboard) }
+
     val navigationStack = remember {
-        NavigationStack().apply {
-            push(Screen.Dashboard)  // Start on Dashboard
-        }
+        mutableListOf<Screen>(Screen.Dashboard)
     }
 
     val factory = GarageViewModelFactory(repository)
-    val currentScreen = navigationStack.current()
 
     // ✅ System back button handler
-    BackHandler(enabled = navigationStack.canGoBack()) {
-        navigationStack.pop()  // Just pop the stack!
+    BackHandler(enabled = navigationStack.size > 1) {
+        navigationStack.removeAt(navigationStack.size - 1)
+        currentScreen = navigationStack.last()  // ✅ Update state to trigger recomposition
     }
 
     // ✅ Navigation functions
     val navigate = { screen: Screen ->
-        navigationStack.push(screen)
+        navigationStack.add(screen)
+        currentScreen = screen  // ✅ KEY FIX - Update state so UI recomposes
     }
 
     val goBack = {
-        navigationStack.pop()
+        if (navigationStack.size > 1) {
+            navigationStack.removeAt(navigationStack.size - 1)
+            currentScreen = navigationStack.last()  // ✅ Update state to trigger recomposition
+        }
     }
 
     // ✅ Swap screens based on current state
@@ -72,10 +76,9 @@ fun MotoEireApp(repository: CarRepository) {
             val viewModel: AddCarViewModel = viewModel(factory = factory)
             AddCarScreen(
                 viewModel = viewModel,
-                onNavigateBack = { goBack() }  // Uses stack!
+                onNavigateBack = { goBack() }
             )
         }
-        // ✅ Placeholder branches for future screens
         Screen.EditCar -> {
             // TODO: Implement EditCarScreen
         }

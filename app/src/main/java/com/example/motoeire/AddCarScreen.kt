@@ -4,7 +4,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,47 +13,51 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import android.widget.Toast
-import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.BackHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddCarScreen(
     viewModel: AddCarViewModel,
     onNavigateBack: () -> Unit
-    ) {
-        val snackbarHostState = remember { SnackbarHostState() }
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
 
-        // Show snackbar when error occurs
-        LaunchedEffect(viewModel.errorMessage) {
-            viewModel.errorMessage?.let {
-                snackbarHostState.showSnackbar(
-                    message = it,
-                    duration = SnackbarDuration.Long
-                )
-                viewModel.clearError()  // Clear error after showing
-            }
+    LaunchedEffect(viewModel.errorMessage) {
+        viewModel.errorMessage?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Long
+            )
+            viewModel.clearError()
         }
+    }
 
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Add Vehicle") },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            viewModel.clearFields()
-                            onNavigateBack()
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close"
-                            )
-                        }
+    // ✅ Simple - just call the callback
+    BackHandler {
+        viewModel.clearFields()
+        onNavigateBack()  // Stack handles the navigation
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Add Vehicle") },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        viewModel.clearFields()
+                        onNavigateBack()  // Stack handles the navigation
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Go back"
+                        )
                     }
-                )
-            },
-            snackbarHost = { SnackbarHost(snackbarHostState) }  // ✅ ADD THIS
-        ) { paddingValues ->
+                }
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
 
         Column(
             modifier = Modifier
@@ -126,7 +130,7 @@ fun AddCarScreen(
                 onDateSelected = { viewModel.motorTaxDate = it }
             )
 
-            Spacer(modifier = Modifier.weight(1f)) // Pushes the rest to the bottom
+            Spacer(modifier = Modifier.weight(1f))
 
             // Save Button
             Button(
@@ -134,7 +138,7 @@ fun AddCarScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(100) // Pill shape for expressive M3
+                shape = RoundedCornerShape(100)
             ) {
                 Text("Save Vehicle", style = MaterialTheme.typography.titleMedium)
             }

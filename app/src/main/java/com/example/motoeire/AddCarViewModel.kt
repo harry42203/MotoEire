@@ -18,19 +18,25 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
     var nctDate by mutableStateOf<Long?>(null)
     var motorTaxDate by mutableStateOf<Long?>(null)
+
+    // ✅ NEW - Image path
+    var imagePath by mutableStateOf<String?>(null)
+
     fun clearFields() {
         nickname = ""
         registration = ""
         insuranceProvider = ""
         policyNumber = ""
-        // Reset dates to current time
         insuranceRenewalDate = null
         nctDate = null
         motorTaxDate = null
+        imagePath = null  // ✅ NEW
     }
+
     fun clearError() {
         errorMessage = null
     }
+
     fun saveCar(onNavigateBack: () -> Unit) {
         errorMessage = null
         when {
@@ -61,7 +67,8 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
                     insurancePolicyNumber = policyNumber,
                     insuranceRenewalDate = insuranceRenewalDate ?: 0L,
                     nctRenewalDate = nctDate ?: 0L,
-                    motorTaxRenewalDate = motorTaxDate ?: 0L
+                    motorTaxRenewalDate = motorTaxDate ?: 0L,
+                    imagePath = imagePath  // ✅ NEW
                 )
                 repository.insertCar(newCar)
                 clearFields()

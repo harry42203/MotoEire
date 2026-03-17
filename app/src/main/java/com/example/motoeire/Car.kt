@@ -26,5 +26,8 @@ data class Car(
     val nctRenewalDate: Long,
 
     @ColumnInfo(name = "motor_tax_renewal_date")
-    val motorTaxRenewalDate: Long
+    val motorTaxRenewalDate: Long,
+
+    @ColumnInfo(name = "image_path")
+    val imagePath: String? = null
 )

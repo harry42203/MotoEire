@@ -4,7 +4,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Car::class], version = 2, exportSchema = false)
+@Database(
+    entities = [Car::class],
+    version = 3,  // ✅ UPDATED FROM 2 TO 3
+    exportSchema = false
+)
 abstract class GarageDatabase : RoomDatabase() {
 
     abstract fun carDao(): CarDao
@@ -14,14 +18,13 @@ abstract class GarageDatabase : RoomDatabase() {
         private var INSTANCE: GarageDatabase? = null
 
         fun getDatabase(context: Context): GarageDatabase {
-            // If the INSTANCE is not null, return it. Otherwise, create the database.
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     GarageDatabase::class.java,
                     "garage_database"
                 )
-                    .fallbackToDestructiveMigration() // Useful for prototyping; wipes DB on schema change
+                    .fallbackToDestructiveMigration() // ✅ Handles migration automatically
                     .build()
 
                 INSTANCE = instance

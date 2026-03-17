@@ -27,4 +27,7 @@ interface CarDao {
 
     @Update
     suspend fun updateCar(car: Car)
+
+    @Query("DELETE FROM cars")
+    suspend fun deleteAllCars()
 }

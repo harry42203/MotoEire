@@ -6,6 +6,7 @@ sealed class Screen {
     data object AddCar : Screen()
     data object EditCar : Screen()  // Easy to add new screens!
     data object Details : Screen()  // Future screens
+    data object Settings : Screen()
 }
 
 // ✅ Navigation actions

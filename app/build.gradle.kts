@@ -80,6 +80,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.material3)
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2024.02.02")

@@ -1,0 +1,67 @@
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+  weights:
+    complexity: 2
+    LongParameterList: 1
+    LongMethod: 1
+    LargeClass: 1
+    TooManyFunctions: 1
+
+config:
+  validation: true
+  warningThreshold: 0
+  failThreshold: 0
+  excludes: '**/test/**,**/androidTest/**'
+
+rules:
+  active: true
+  
+  # Complexity Rules
+  complexity:
+    active: true
+    CyclomaticComplexity:
+      active: true
+      threshold: 15
+    LongMethod:
+      active: true
+      threshold: 30
+    LongParameterList:
+      active: true
+      functionThreshold: 6
+  
+  # Style Rules
+  style:
+    active: true
+    MagicNumber:
+      active: true
+      ignoreNumbers: ['-1', '0', '1', '2']
+    MaxLineLength:
+      active: true
+      maxLineLength: 120
+    UnusedImports:
+      active: true
+    UnusedPrivateClass:
+      active: true
+    UnusedPrivateMember:
+      active: true
+    UnusedPrivateProperty:
+      active: true
+  
+  # Performance
+  performance:
+    active: true
+    UnnecessaryTemporaryInstantiation:
+      active: true
+  
+  # Potential Bugs
+  potential-bugs:
+    active: true
+    DuplicateCaseInWhenExpression:
+      active: true
+    EqualsAlwaysReturnsTrue:
+      active: true
+    EqualsAlwaysFalse:
+      active: true
+    ExplicitGarbageCollectionCall:
+      active: true

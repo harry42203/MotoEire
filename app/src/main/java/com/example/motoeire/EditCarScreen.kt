@@ -382,7 +382,7 @@ fun EditCarScreen(
                     )
 
                     // Save to database
-                    viewModel.updateCar(updatedCar)
+                    viewModel.updateCar(updatedCar, oldImagePath = car.imagePath)
                     editViewModel.clearFields()
                     onNavigateBack()
                 },

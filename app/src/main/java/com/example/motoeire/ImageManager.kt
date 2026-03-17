@@ -13,7 +13,7 @@ import java.util.*
  */
 class ImageManager(private val context: Context) {
 
-    private val imageDir = File(context.filesDir, "car_images")
+    private val imageDir = File(context.noBackupFilesDir, "car_images")
 
     init {
         // Create directory if it doesn't exist

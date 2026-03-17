@@ -24,9 +24,9 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
         insuranceProvider = ""
         policyNumber = ""
         // Reset dates to current time
-        insuranceRenewalDate = System.currentTimeMillis()
-        nctDate = System.currentTimeMillis()
-        motorTaxDate = System.currentTimeMillis()
+        insuranceRenewalDate = null
+        nctDate = null
+        motorTaxDate = null
     }
     fun clearError() {
         errorMessage = null

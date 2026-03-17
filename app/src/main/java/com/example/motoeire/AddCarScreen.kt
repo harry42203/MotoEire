@@ -109,6 +109,12 @@ fun AddCarScreen(
 
             // Date Pickers
             DatePickerField(
+                label = "Insurance Renewal Date",
+                selectedDateMillis = viewModel.insuranceRenewalDate,
+                onDateSelected = { viewModel.insuranceRenewalDate = it }
+            )
+
+            DatePickerField(
                 label = "NCT Renewal Date",
                 selectedDateMillis = viewModel.nctDate,
                 onDateSelected = { viewModel.nctDate = it }

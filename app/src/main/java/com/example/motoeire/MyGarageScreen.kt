@@ -141,6 +141,15 @@ fun CarCard(car: Car, viewModel: GarageViewModel) {
             // 2. Replaced old Dates with Smart RenewalRows!
             RenewalRow(
                 icon = Icons.Outlined.CalendarMonth,
+                label = "Insurance Renewal",
+                dateMillis = car.insuranceRenewalDate,
+                buttonText = "Renew Insurance",
+                url = "https://www.google.com/search?q=car+insurance+renewal",  // Or your specific URL
+                context = context
+            )
+
+            RenewalRow(
+                icon = Icons.Outlined.CalendarMonth,
                 label = "NCT Renewal",
                 dateMillis = car.nctRenewalDate,
                 buttonText = "Book NCT",

@@ -9,7 +9,7 @@ data class Car(
     val id: Int = 0,
 
     val nickname: String,
-    
+
     @ColumnInfo(name = "registration_number")
     val registrationNumber: String,
 
@@ -19,7 +19,9 @@ data class Car(
     @ColumnInfo(name = "insurance_policy_number")
     val insurancePolicyNumber: String,
 
-    // Storing dates as Long (Unix timestamps) is recommended for easier sorting/comparisons
+    @ColumnInfo(name = "insurance_renewal_date")
+    val insuranceRenewalDate: Long,
+
     @ColumnInfo(name = "nct_renewal_date")
     val nctRenewalDate: Long,
 

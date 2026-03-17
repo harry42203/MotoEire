@@ -6,8 +6,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
-import android.widget.Toast
-import androidx.compose.ui.platform.LocalContext
 
 class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
 
@@ -16,8 +14,8 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
     var registration by mutableStateOf("")
     var insuranceProvider by mutableStateOf("")
     var policyNumber by mutableStateOf("")
+    var insuranceRenewalDate by mutableStateOf<Long?>(null)
     var errorMessage by mutableStateOf<String?>(null)
-    // Dates held as Longs (Unix timestamps) to match your Room Entity
     var nctDate by mutableStateOf<Long?>(null)
     var motorTaxDate by mutableStateOf<Long?>(null)
     fun clearFields() {
@@ -26,6 +24,7 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
         insuranceProvider = ""
         policyNumber = ""
         // Reset dates to current time
+        insuranceRenewalDate = System.currentTimeMillis()
         nctDate = System.currentTimeMillis()
         motorTaxDate = System.currentTimeMillis()
     }
@@ -33,11 +32,14 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
         errorMessage = null
     }
     fun saveCar(onNavigateBack: () -> Unit) {
-        errorMessage = null  // Clear previous errors
-
+        errorMessage = null
         when {
             registration.isBlank() -> {
                 errorMessage = "Please enter a registration number"
+                return
+            }
+            insuranceRenewalDate == null -> {
+                errorMessage = "Please select an insurance renewal date"
                 return
             }
             nctDate == null -> {
@@ -57,6 +59,7 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
                     registrationNumber = registration,
                     insuranceProvider = insuranceProvider,
                     insurancePolicyNumber = policyNumber,
+                    insuranceRenewalDate = insuranceRenewalDate ?: 0L,
                     nctRenewalDate = nctDate ?: 0L,
                     motorTaxRenewalDate = motorTaxDate ?: 0L
                 )

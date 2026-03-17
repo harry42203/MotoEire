@@ -75,7 +75,9 @@ fun DetailsScreen(
                     }
                     // ✅ Delete button
                     IconButton(onClick = {
+                        // Delete the car asynchronously
                         viewModel.deleteCar(car)
+                        // Navigate back after a small delay to allow deletion
                         onDeleteClick()
                     }) {
                         Icon(

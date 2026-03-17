@@ -14,6 +14,7 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
     var registration by mutableStateOf("")
     var insuranceProvider by mutableStateOf("")
     var policyNumber by mutableStateOf("")
+    var errorMessage by mutableStateOf<String?>(null)
 
     // Dates held as Longs (Unix timestamps) to match your Room Entity
     var nctDate by mutableStateOf<Long?>(null)
@@ -29,11 +30,11 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
     }
     fun saveCar(onNavigateBack: () -> Unit) {
         if (registration.isBlank()) {
-            // Show error - registration is required
+            errorMessage = "Registration number is required"
             return
         }
         if (nctDate == null || motorTaxDate == null) {
-            // Show error - dates are required
+            errorMessage = "Dates are required"
             return
         }
         viewModelScope.launch {

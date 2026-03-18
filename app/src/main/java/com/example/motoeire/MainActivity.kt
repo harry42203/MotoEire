@@ -1,5 +1,6 @@
 package com.example.motoeire
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -41,7 +42,7 @@ fun MotoEireApp(repository: CarRepository) {
     val context = LocalContext.current
     val settingsDataStore = remember { SettingsDataStore(context) }
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModelFactory(settingsDataStore, repository)
+        factory = SettingsViewModelFactory(settingsDataStore, repository, context)  // ✅ ADD context
     )
     val settings by settingsViewModel.userSettings.collectAsState()
 
@@ -136,13 +137,14 @@ fun MotoEireApp(repository: CarRepository) {
 
 class SettingsViewModelFactory(
     private val settingsDataStore: SettingsDataStore,
-    private val repository: CarRepository
+    private val repository: CarRepository,
+    private val context: Context  // ✅ ADD THIS
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
                 @Suppress("UNCHECKED_CAST")
-                SettingsViewModel(settingsDataStore, repository, this) as T
+                SettingsViewModel(settingsDataStore, repository, context) as T  // ✅ CHANGE THIS
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class")
         }

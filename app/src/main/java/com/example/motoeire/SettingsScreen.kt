@@ -25,7 +25,8 @@ import androidx.compose.material.icons.outlined.NotificationsActive
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToNotifications: () -> Unit
 ) {
     val settings by viewModel.userSettings.collectAsState()
     var showResetDialog by remember { mutableStateOf(false) }
@@ -156,6 +157,34 @@ fun SettingsScreen(
                     }
                 }
             }
+            SettingsCard {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Configure notifications for NCT, Tax, and Insurance renewals",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Button(
+                        onClick = { onNavigateToNotifications() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.NotificationsActive,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Configure Notifications")
+                    }
+                }
+            }
 
             // ✅ Data Settings Section
             SettingsSectionHeader(
@@ -189,35 +218,6 @@ fun SettingsScreen(
                 title = "Notifications",
                 description = "Manage vehicle renewal reminders"
             )
-
-            SettingsCard {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "Configure notifications for NCT, Tax, and Insurance renewals",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Button(
-                        onClick = { /* Navigate to NotificationsScreen */ },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.NotificationsActive,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Configure Notifications")
-                    }
-                }
-            }
 
             // ✅ Warning Text
             Text(

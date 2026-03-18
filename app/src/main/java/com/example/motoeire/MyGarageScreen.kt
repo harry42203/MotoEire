@@ -32,10 +32,10 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun MyGarageScreen(
     viewModel: GarageViewModel,
-    viewMode: ViewMode = ViewMode.GRID,  // ✅ NEW
+    viewMode: ViewMode = ViewMode.GRID,
     onAddCarClick: () -> Unit,
     onCarCardClick: (carId: Int) -> Unit,
-    onSettingsClick: () -> Unit  // ✅ NEW
+    onSettingsClick: () -> Unit
 ) {
     val cars by viewModel.carsList.collectAsState()
 
@@ -50,7 +50,7 @@ fun MyGarageScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = onSettingsClick) {  // ✅ NEW
+                    IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Outlined.Settings,
                             contentDescription = "Settings"
@@ -71,7 +71,6 @@ fun MyGarageScreen(
     ) { paddingValues ->
 
         if (cars.isEmpty()) {
-            // Friendly Empty State
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -104,7 +103,6 @@ fun MyGarageScreen(
                 }
             }
         } else {
-            // ✅ NEW - Support different view modes
             when (viewMode) {
                 ViewMode.GRID -> GridViewLayout(cars, paddingValues, onCarCardClick)
                 ViewMode.CARD -> CardViewLayout(cars, paddingValues, onCarCardClick)
@@ -114,7 +112,6 @@ fun MyGarageScreen(
     }
 }
 
-// ✅ Grid View (original implementation)
 @Composable
 fun GridViewLayout(
     cars: List<Car>,
@@ -139,7 +136,6 @@ fun GridViewLayout(
     }
 }
 
-// ✅ Card View (16:9 aspect ratio cards)
 @Composable
 fun CardViewLayout(
     cars: List<Car>,
@@ -165,15 +161,11 @@ fun CarWideCard(
     car: Car,
     onClick: () -> Unit
 ) {
-    val renewalStatus = try {
-        getWorstRenewalStatus(
-            insuranceDate = car.insuranceRenewalDate,
-            nctDate = car.nctRenewalDate,
-            motorTaxDate = car.motorTaxRenewalDate
-        )
-    } catch (e: Exception) {
-        RenewalStatus.OK  // Default to OK if error
-    }
+    val statuses = getIndividualRenewalStatuses(
+        insuranceDate = car.insuranceRenewalDate,
+        nctDate = car.nctRenewalDate,
+        motorTaxDate = car.motorTaxRenewalDate
+    )
 
     Surface(
         modifier = Modifier
@@ -188,7 +180,6 @@ fun CarWideCard(
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Box {
-            // Background image
             if (car.imagePath != null) {
                 AsyncImage(
                     model = car.imagePath,
@@ -198,19 +189,16 @@ fun CarWideCard(
                 )
             }
 
-            // Dark overlay
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = Color.Black.copy(alpha = 0.25f)
             ) {}
 
-            // ✅ CHANGED - Use Box with positioning instead of Row
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                // Nickname - Top left
                 Text(
                     text = car.nickname,
                     style = MaterialTheme.typography.titleMedium,
@@ -219,7 +207,6 @@ fun CarWideCard(
                     modifier = Modifier.align(Alignment.TopStart)
                 )
 
-                // Registration number - Bottom left
                 Text(
                     text = car.registrationNumber,
                     style = MaterialTheme.typography.labelSmall,
@@ -227,9 +214,9 @@ fun CarWideCard(
                     modifier = Modifier.align(Alignment.BottomStart)
                 )
 
-                // Status badge - Top right
-                StatusBadge(
-                    status = renewalStatus,
+                // ✅ Show only issues or all ok
+                RenewalStatusColumn(
+                    statuses = statuses,
                     modifier = Modifier.align(Alignment.TopEnd)
                 )
             }
@@ -237,7 +224,6 @@ fun CarWideCard(
     }
 }
 
-// ✅ List View
 @Composable
 fun ListViewLayout(
     cars: List<Car>,
@@ -257,7 +243,6 @@ fun ListViewLayout(
     }
 }
 
-// ✅ List Item Component
 @Composable
 fun CarListItem(
     car: Car,
@@ -270,7 +255,7 @@ fun CarListItem(
             motorTaxDate = car.motorTaxRenewalDate
         )
     } catch (e: Exception) {
-        RenewalStatus.OK  // Default to OK if error
+        RenewalStatus.OK
     }
 
     val statusColor = when (renewalStatus) {
@@ -331,19 +316,18 @@ fun CarListItem(
     }
 }
 
-// ✅ FIXED - Beautiful gallery card with image and status badge
+// ✅ Beautiful gallery card with image and status badges
 @Composable
 fun CarGalleryCard(
     car: Car,
     onClick: () -> Unit
 ) {
-    val renewalStatus = getWorstRenewalStatus(
+    val statuses = getIndividualRenewalStatuses(
         insuranceDate = car.insuranceRenewalDate,
         nctDate = car.nctRenewalDate,
         motorTaxDate = car.motorTaxRenewalDate
     )
 
-    // ✅ FIXED - Use semanticsModifier instead of .clickable with Surface
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -357,7 +341,6 @@ fun CarGalleryCard(
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Box {
-            // ✅ Background image
             if (car.imagePath != null) {
                 AsyncImage(
                     model = car.imagePath,
@@ -366,61 +349,171 @@ fun CarGalleryCard(
                     contentScale = ContentScale.Crop
                 )
             } else {
-                // Placeholder
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.tertiaryContainer
                 ) {}
             }
 
-            // ✅ Dark overlay for text readability
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = Color.Black.copy(alpha = 0.3f)
             ) {}
 
-            // ✅ Car name - Top left
-            Text(
-                text = car.nickname,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
+            Box(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
+                    .fillMaxSize()
                     .padding(12.dp)
-            )
+            ) {
+                Text(
+                    text = car.nickname,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.TopStart)
+                )
 
-            // ✅ Status badge - Top right
-            StatusBadge(
-                status = renewalStatus,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(12.dp)
-            )
+                // ✅ Show only issues or all ok
+                RenewalStatusColumn(
+                    statuses = statuses,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                )
 
-            // ✅ Registration at bottom
+                Text(
+                    text = car.registrationNumber,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.align(Alignment.BottomStart)
+                )
+            }
+        }
+    }
+}
+
+// ✅ NEW - Data class for individual renewal statuses
+data class RenewalStatuses(
+    val nctStatus: RenewalStatus,
+    val taxStatus: RenewalStatus,
+    val insuranceStatus: RenewalStatus
+)
+
+// ✅ NEW - Get individual statuses for each renewal type
+fun getIndividualRenewalStatuses(
+    insuranceDate: Long,
+    nctDate: Long,
+    motorTaxDate: Long
+): RenewalStatuses {
+    return RenewalStatuses(
+        nctStatus = checkRenewalStatus(nctDate),
+        taxStatus = checkRenewalStatus(motorTaxDate),
+        insuranceStatus = checkRenewalStatus(insuranceDate)
+    )
+}
+
+// ✅ UPDATED - Only show issues (DUE_SOON or OVERDUE) or display "All OK"
+@Composable
+fun RenewalStatusColumn(
+    statuses: RenewalStatuses,
+    modifier: Modifier = Modifier
+) {
+    // Get only the items that have issues
+    val issues = listOfNotNull(
+        if (statuses.nctStatus != RenewalStatus.OK) "NCT" to statuses.nctStatus else null,
+        if (statuses.taxStatus != RenewalStatus.OK) "Tax" to statuses.taxStatus else null,
+        if (statuses.insuranceStatus != RenewalStatus.OK) "Insurance" to statuses.insuranceStatus else null
+    )
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        if (issues.isEmpty()) {
+            // ✅ Show "All OK" if no issues
+            AllOkBadge()
+        } else {
+            // ✅ Show only the issues
+            issues.forEach { (label, status) ->
+                RenewalStatusBadge(label, status)
+            }
+        }
+    }
+}
+
+// ✅ NEW - "All OK" badge when everything is good
+@Composable
+fun AllOkBadge() {
+    Surface(
+        color = Color(0xFF4CAF50).copy(alpha = 0.9f),
+        shape = RoundedCornerShape(6.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                text = car.registrationNumber,
+                text = "✓",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.9f),
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(12.dp)
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "All OK",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
             )
         }
     }
 }
 
-// ✅ Status badge component
+// ✅ Individual status badge with label and icon
+@Composable
+fun RenewalStatusBadge(
+    label: String,
+    status: RenewalStatus
+) {
+    val (backgroundColor, statusText) = when (status) {
+        RenewalStatus.OK -> Color(0xFF4CAF50).copy(alpha = 0.9f) to "✓"
+        RenewalStatus.DUE_SOON -> Color(0xFFF57C00).copy(alpha = 0.9f) to "!"
+        RenewalStatus.OVERDUE -> Color(0xFFD32F2F).copy(alpha = 0.9f) to "⚠"
+    }
+
+    Surface(
+        color = backgroundColor,
+        shape = RoundedCornerShape(6.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+// ✅ Status badge component (kept for backwards compatibility)
 @Composable
 fun StatusBadge(
     status: RenewalStatus,
     modifier: Modifier = Modifier
 ) {
     val backgroundColor = when (status) {
-        RenewalStatus.OK -> Color(0xFF4CAF50).copy(alpha = 0.9f)  // Green
-        RenewalStatus.DUE_SOON -> Color(0xFFF57C00).copy(alpha = 0.9f)  // Amber
-        RenewalStatus.OVERDUE -> Color(0xFFD32F2F).copy(alpha = 0.9f)  // Red
+        RenewalStatus.OK -> Color(0xFF4CAF50).copy(alpha = 0.9f)
+        RenewalStatus.DUE_SOON -> Color(0xFFF57C00).copy(alpha = 0.9f)
+        RenewalStatus.OVERDUE -> Color(0xFFD32F2F).copy(alpha = 0.9f)
     }
 
     val label = when (status) {
@@ -444,7 +537,6 @@ fun StatusBadge(
     }
 }
 
-// ✅ Helper function to get worst status across all renewal dates
 fun getWorstRenewalStatus(
     insuranceDate: Long,
     nctDate: Long,
@@ -456,7 +548,6 @@ fun getWorstRenewalStatus(
         checkRenewalStatus(motorTaxDate)
     )
 
-    // Priority: OVERDUE > DUE_SOON > OK
     return when {
         RenewalStatus.OVERDUE in statuses -> RenewalStatus.OVERDUE
         RenewalStatus.DUE_SOON in statuses -> RenewalStatus.DUE_SOON
@@ -464,19 +555,16 @@ fun getWorstRenewalStatus(
     }
 }
 
-// Helper to convert the Long timestamp back to a readable date
 fun formatTimestamp(millis: Long): String {
     if (millis == 0L) return "Not set"
     val formatter = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
     return formatter.format(java.util.Date(millis))
 }
 
-// Defines the three possible states for a renewal date
 enum class RenewalStatus {
     OK, DUE_SOON, OVERDUE
 }
 
-// Calculates the status based on the saved timestamp
 fun checkRenewalStatus(dateMillis: Long): RenewalStatus {
     if (dateMillis == 0L) return RenewalStatus.OK
 
@@ -490,4 +578,3 @@ fun checkRenewalStatus(dateMillis: Long): RenewalStatus {
         else -> RenewalStatus.OK
     }
 }
-

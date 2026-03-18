@@ -42,7 +42,7 @@ fun MotoEireApp(repository: CarRepository) {
     val context = LocalContext.current
     val settingsDataStore = remember { SettingsDataStore(context) }
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModelFactory(settingsDataStore, repository, context)  // ✅ ADD context
+        factory = SettingsViewModelFactory(settingsDataStore, repository, context)
     )
     val settings by settingsViewModel.userSettings.collectAsState()
 
@@ -128,6 +128,13 @@ fun MotoEireApp(repository: CarRepository) {
             Screen.Settings -> {
                 SettingsScreen(
                     viewModel = settingsViewModel,
+                    onNavigateBack = { goBack() },
+                    onNavigateToNotifications = { navigate(Screen.Notifications) }  // ✅ ADD THIS
+                )
+            }
+            Screen.Notifications -> {  // ✅ ADD THIS ENTIRE BLOCK
+                NotificationsScreen(
+                    viewModel = settingsViewModel,
                     onNavigateBack = { goBack() }
                 )
             }
@@ -138,18 +145,19 @@ fun MotoEireApp(repository: CarRepository) {
 class SettingsViewModelFactory(
     private val settingsDataStore: SettingsDataStore,
     private val repository: CarRepository,
-    private val context: Context  // ✅ ADD THIS
+    private val context: Context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
                 @Suppress("UNCHECKED_CAST")
-                SettingsViewModel(settingsDataStore, repository, context) as T  // ✅ CHANGE THIS
+                SettingsViewModel(settingsDataStore, repository, context) as T
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
 }
+
 class GarageViewModelFactory(private val repository: CarRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {

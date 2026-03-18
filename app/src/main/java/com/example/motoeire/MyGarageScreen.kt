@@ -204,33 +204,33 @@ fun CarWideCard(
                 color = Color.Black.copy(alpha = 0.25f)
             ) {}
 
-            Row(
+            // ✅ CHANGED - Use Box with positioning instead of Row
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = car.nickname,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = car.registrationNumber,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                }
+                // Nickname - Top left
+                Text(
+                    text = car.nickname,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.TopStart)
+                )
 
+                // Registration number - Bottom left
+                Text(
+                    text = car.registrationNumber,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.align(Alignment.BottomStart)
+                )
+
+                // Status badge - Top right
                 StatusBadge(
                     status = renewalStatus,
-                    modifier = Modifier.align(Alignment.Top)
+                    modifier = Modifier.align(Alignment.TopEnd)
                 )
             }
         }

@@ -19,6 +19,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import androidx.compose.ui.platform.LocalContext
+import java.util.concurrent.TimeUnit
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -157,6 +162,11 @@ fun SettingsScreen(
                     }
                 }
             }
+            SettingsSectionHeader(
+                icon = Icons.Outlined.NotificationsActive,
+                title = "Notifications",
+                description = "Manage vehicle renewal reminders"
+            )
             SettingsCard {
                 Column(
                     modifier = Modifier
@@ -213,11 +223,7 @@ fun SettingsScreen(
                     Text("Delete All Data")
                 }
             }
-            SettingsSectionHeader(
-                icon = Icons.Outlined.NotificationsActive,
-                title = "Notifications",
-                description = "Manage vehicle renewal reminders"
-            )
+
 
             // ✅ Warning Text
             Text(
@@ -226,7 +232,101 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
+            val context = LocalContext.current
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = {
+                        // ✅ Test NCT notification - fires in 3 seconds
+                        val testWork = OneTimeWorkRequestBuilder<NotificationWorker>()
+                            .setInitialDelay(3, TimeUnit.SECONDS)
+                            .setInputData(
+                                workDataOf(
+                                    "carId" to 1,
+                                    "renewalType" to "NCT",
+                                    "carName" to "Test Vehicle",
+                                    "daysRemaining" to 90
+                                )
+                            )
+                            .build()
+
+                        WorkManager.getInstance(context).enqueueUniqueWork(
+                            "test_notification_nct",
+                            androidx.work.ExistingWorkPolicy.REPLACE,
+                            testWork
+                        )
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary
+                    )
+                ) {
+                    Text("Test NCT")
+                }
+
+                Button(
+                    onClick = {
+                        // ✅ Test Tax notification - fires in 3 seconds
+                        val testWork = OneTimeWorkRequestBuilder<NotificationWorker>()
+                            .setInitialDelay(3, TimeUnit.SECONDS)
+                            .setInputData(
+                                workDataOf(
+                                    "carId" to 2,
+                                    "renewalType" to "TAX",
+                                    "carName" to "Test Vehicle",
+                                    "daysRemaining" to 30
+                                )
+                            )
+                            .build()
+
+                        WorkManager.getInstance(context).enqueueUniqueWork(
+                            "test_notification_tax",
+                            androidx.work.ExistingWorkPolicy.REPLACE,
+                            testWork
+                        )
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary
+                    )
+                ) {
+                    Text("Test Tax")
+                }
+
+                Button(
+                    onClick = {
+                        // ✅ Test Insurance notification - fires in 3 seconds
+                        val testWork = OneTimeWorkRequestBuilder<NotificationWorker>()
+                            .setInitialDelay(3, TimeUnit.SECONDS)
+                            .setInputData(
+                                workDataOf(
+                                    "carId" to 3,
+                                    "renewalType" to "INSURANCE",
+                                    "carName" to "Test Vehicle",
+                                    "daysRemaining" to 7
+                                )
+                            )
+                            .build()
+
+                        WorkManager.getInstance(context).enqueueUniqueWork(
+                            "test_notification_insurance",
+                            androidx.work.ExistingWorkPolicy.REPLACE,
+                            testWork
+                        )
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary
+                    )
+                ) {
+                    Text("Test Ins")
+                }
+            }
             Spacer(modifier = Modifier.height(24.dp))
         }
     }

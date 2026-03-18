@@ -45,9 +45,11 @@ fun MyGarageScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var sortedCars by remember(cars) { mutableStateOf(cars) }
 
+    // ✅ NEW - Handle back button to exit selection mode
     BackHandler(enabled = isSelectionMode) {
         viewModel.toggleSelectionMode()
     }
+
     // ✅ Delete confirmation dialog
     if (showDeleteDialog) {
         AlertDialog(
@@ -285,6 +287,7 @@ fun CardViewLayout(
     onOrderChanged: (List<Car>) -> Unit
 ) {
     var reorderedCars by remember(cars) { mutableStateOf(cars) }
+    var draggedItemIndex by remember { mutableStateOf<Int?>(null) }
 
     LazyColumn(
         modifier = Modifier
@@ -294,6 +297,8 @@ fun CardViewLayout(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(reorderedCars, key = { car -> car.id }) { car ->
+            val index = reorderedCars.indexOf(car)
+
             CarWideCardWithSelection(
                 car = car,
                 onClick = {
@@ -311,12 +316,17 @@ fun CardViewLayout(
                 },
                 isSelectionMode = isSelectionMode,
                 isSelected = selectedCars.contains(car.id),
-                onMove = { from, to ->
+                isDragging = draggedItemIndex == index,
+                onDragStart = { draggedItemIndex = index },
+                onDragEnd = {
+                    draggedItemIndex = null
+                    onOrderChanged(reorderedCars)
+                },
+                onMove = { toIndex ->
                     val newList = reorderedCars.toMutableList()
-                    val item = newList.removeAt(from)
-                    newList.add(to, item)
+                    val item = newList.removeAt(index)
+                    newList.add(toIndex, item)
                     reorderedCars = newList
-                    onOrderChanged(newList)
                 }
             )
         }
@@ -334,6 +344,7 @@ fun ListViewLayout(
     onOrderChanged: (List<Car>) -> Unit
 ) {
     var reorderedCars by remember(cars) { mutableStateOf(cars) }
+    var draggedItemIndex by remember { mutableStateOf<Int?>(null) }
 
     LazyColumn(
         modifier = Modifier
@@ -343,6 +354,8 @@ fun ListViewLayout(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(reorderedCars, key = { car -> car.id }) { car ->
+            val index = reorderedCars.indexOf(car)
+
             CarListItemWithSelection(
                 car = car,
                 onClick = {
@@ -359,13 +372,25 @@ fun ListViewLayout(
                     }
                 },
                 isSelectionMode = isSelectionMode,
-                isSelected = selectedCars.contains(car.id)
+                isSelected = selectedCars.contains(car.id),
+                isDragging = draggedItemIndex == index,
+                onDragStart = { draggedItemIndex = index },
+                onDragEnd = {
+                    draggedItemIndex = null
+                    onOrderChanged(reorderedCars)
+                },
+                onMove = { toIndex ->
+                    val newList = reorderedCars.toMutableList()
+                    val item = newList.removeAt(index)
+                    newList.add(toIndex, item)
+                    reorderedCars = newList
+                }
             )
         }
     }
 }
 
-// ✅ Wide Card with selection
+// ✅ Wide Card with selection and drag support
 @Composable
 fun CarWideCardWithSelection(
     car: Car,
@@ -373,7 +398,10 @@ fun CarWideCardWithSelection(
     onLongPress: () -> Unit,
     isSelectionMode: Boolean,
     isSelected: Boolean,
-    onMove: (Int, Int) -> Unit = { _, _ -> }
+    isDragging: Boolean = false,
+    onDragStart: () -> Unit = {},
+    onDragEnd: () -> Unit = {},
+    onMove: (Int) -> Unit = {}
 ) {
     val statuses = getIndividualRenewalStatuses(
         insuranceDate = car.insuranceRenewalDate,
@@ -387,10 +415,11 @@ fun CarWideCardWithSelection(
             .height(180.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(
-                if (isSelected)
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                else
-                    Color.Transparent
+                when {
+                    isDragging -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    else -> Color.Transparent
+                }
             )
             .combinedClickable(
                 enabled = true,
@@ -399,7 +428,8 @@ fun CarWideCardWithSelection(
                 onClick = onClick,
                 onLongClick = onLongPress
             ),
-        color = MaterialTheme.colorScheme.surfaceVariant
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shadowElevation = if (isDragging) 8.dp else 0.dp
     ) {
         Box {
             if (car.imagePath != null) {
@@ -555,14 +585,18 @@ fun CarGalleryCard(
     }
 }
 
-// ✅ List item with selection
+// ✅ List item with selection and drag support
 @Composable
 fun CarListItemWithSelection(
     car: Car,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     isSelectionMode: Boolean,
-    isSelected: Boolean
+    isSelected: Boolean,
+    isDragging: Boolean = false,
+    onDragStart: () -> Unit = {},
+    onDragEnd: () -> Unit = {},
+    onMove: (Int) -> Unit = {}
 ) {
     val renewalStatus = try {
         getWorstRenewalStatus(
@@ -586,10 +620,11 @@ fun CarListItemWithSelection(
             .height(56.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(
-                if (isSelected)
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                else
-                    Color.Transparent
+                when {
+                    isDragging -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    else -> Color.Transparent
+                }
             )
             .combinedClickable(
                 enabled = true,
@@ -598,7 +633,8 @@ fun CarListItemWithSelection(
                 onClick = onClick,
                 onLongClick = onLongPress
             ),
-        color = MaterialTheme.colorScheme.surfaceVariant
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shadowElevation = if (isDragging) 8.dp else 0.dp
     ) {
         Row(
             modifier = Modifier
@@ -819,6 +855,11 @@ fun formatTimestamp(millis: Long): String {
     val formatter = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
     return formatter.format(java.util.Date(millis))
 }
+
+enum class RenewalStatus {
+    OK, DUE_SOON, OVERDUE
+}
+
 fun checkRenewalStatus(dateMillis: Long): RenewalStatus {
     if (dateMillis == 0L) return RenewalStatus.OK
 
@@ -831,8 +872,4 @@ fun checkRenewalStatus(dateMillis: Long): RenewalStatus {
         diffDays in 0..30 -> RenewalStatus.DUE_SOON
         else -> RenewalStatus.OK
     }
-}
-
-enum class RenewalStatus {
-    OK, DUE_SOON, OVERDUE
 }

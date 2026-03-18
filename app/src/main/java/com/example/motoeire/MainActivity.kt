@@ -142,7 +142,7 @@ class SettingsViewModelFactory(
         return when {
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
                 @Suppress("UNCHECKED_CAST")
-                SettingsViewModel(settingsDataStore, repository) as T
+                SettingsViewModel(settingsDataStore, repository, this) as T
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class")
         }

@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.outlined.NotificationsActive
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,6 +182,40 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Delete All Data")
+                }
+            }
+            SettingsSectionHeader(
+                icon = Icons.Outlined.NotificationsActive,
+                title = "Notifications",
+                description = "Manage vehicle renewal reminders"
+            )
+
+            SettingsCard {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Configure notifications for NCT, Tax, and Insurance renewals",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Button(
+                        onClick = { /* Navigate to NotificationsScreen */ },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.NotificationsActive,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Configure Notifications")
+                    }
                 }
             }
 

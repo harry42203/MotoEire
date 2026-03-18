@@ -81,6 +81,9 @@ dependencies {
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.material3)
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.core:core:1.12.0")
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation("androidx.work:work-runtime-ktx:2.8.1")
 
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2024.02.02")

@@ -1,5 +1,6 @@
 package com.example.motoeire
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -10,10 +11,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.example.motoeire.NotificationSettingsDataStore
 
 class SettingsViewModel(
     private val settingsDataStore: SettingsDataStore,
-    private val repository: CarRepository
+    private val repository: CarRepository,
+    private val context: Context
 ) : ViewModel() {
 
     // Expose settings as StateFlow
@@ -61,5 +64,57 @@ class SettingsViewModel(
     // ✅ NEW - Clear error message
     fun clearResetError() {
         resetError = null
+    }
+    private val notificationDataStore = NotificationSettingsDataStore(context)
+
+    val notificationSettings: StateFlow<NotificationSettings> = notificationDataStore.notificationSettings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), NotificationSettings())
+
+    fun updateNctEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            notificationDataStore.updateNctEnabled(enabled)
+        }
+    }
+
+    fun updateTaxEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            notificationDataStore.updateTaxEnabled(enabled)
+        }
+    }
+
+    fun updateInsuranceEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            notificationDataStore.updateInsuranceEnabled(enabled)
+        }
+    }
+
+    fun updateNctReminders(reminders: List<Int>) {
+        viewModelScope.launch {
+            notificationDataStore.updateNctReminders(reminders)
+        }
+    }
+
+    fun updateTaxReminders(reminders: List<Int>) {
+        viewModelScope.launch {
+            notificationDataStore.updateTaxReminders(reminders)
+        }
+    }
+
+    fun updateInsuranceReminders(reminders: List<Int>) {
+        viewModelScope.launch {
+            notificationDataStore.updateInsuranceReminders(reminders)
+        }
+    }
+
+    fun enableAllNotifications() {
+        viewModelScope.launch {
+            notificationDataStore.enableAll()
+        }
+    }
+
+    fun disableAllNotifications() {
+        viewModelScope.launch {
+            notificationDataStore.disableAll()
+        }
     }
 }

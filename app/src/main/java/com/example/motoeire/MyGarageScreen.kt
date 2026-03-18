@@ -1,5 +1,6 @@
 package com.example.motoeire
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -44,6 +45,9 @@ fun MyGarageScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var sortedCars by remember(cars) { mutableStateOf(cars) }
 
+    BackHandler(enabled = isSelectionMode) {
+        viewModel.toggleSelectionMode()
+    }
     // ✅ Delete confirmation dialog
     if (showDeleteDialog) {
         AlertDialog(

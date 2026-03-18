@@ -1,4 +1,5 @@
 package com.example.motoeire
+
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -32,5 +33,8 @@ data class Car(
     val imagePath: String? = null,
 
     @ColumnInfo(name = "tax_pin")
-    val taxPin: String? = null
+    val taxPin: String? = null,
+
+    @ColumnInfo(name = "display_order")  // ✅ NEW - For ordering
+    val displayOrder: Int = 0
 )

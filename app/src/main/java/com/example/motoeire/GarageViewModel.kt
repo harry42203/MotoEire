@@ -6,8 +6,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
@@ -114,6 +116,74 @@ class GarageViewModel(private val repository: CarRepository) : ViewModel() {
     fun clearDeleteError() {
         deleteError = null
         deleteSuccess = false
+    }
+    // ✅ NEW - Multi-select state
+    private val _selectedCars = MutableStateFlow<Set<Int>>(emptySet())
+    val selectedCars: StateFlow<Set<Int>> = _selectedCars.asStateFlow()
+
+    private val _isSelectionMode = MutableStateFlow(false)
+    val isSelectionMode: StateFlow<Boolean> = _isSelectionMode.asStateFlow()
+
+    // ✅ NEW - Toggle selection mode
+    fun toggleSelectionMode() {
+        _isSelectionMode.value = !_isSelectionMode.value
+        if (!_isSelectionMode.value) {
+            _selectedCars.value = emptySet()
+        }
+    }
+
+    // ✅ NEW - Toggle car selection
+    fun toggleCarSelection(carId: Int) {
+        val current = _selectedCars.value.toMutableSet()
+        if (current.contains(carId)) {
+            current.remove(carId)
+        } else {
+            current.add(carId)
+        }
+        _selectedCars.value = current
+    }
+
+    // ✅ NEW - Select all cars
+    fun selectAllCars(carIds: List<Int>) {
+        _selectedCars.value = carIds.toSet()
+    }
+
+    // ✅ NEW - Deselect all cars
+    fun deselectAllCars() {
+        _selectedCars.value = emptySet()
+    }
+
+    // ✅ NEW - Delete selected cars
+    fun deleteSelectedCars() {
+        viewModelScope.launch {
+            try {
+                val carIds = _selectedCars.value.toList()
+                if (carIds.isNotEmpty()) {
+                    repository.deleteCars(carIds)
+                    _selectedCars.value = emptySet()
+                    _isSelectionMode.value = false
+                    deleteSuccess = true
+                }
+            } catch (e: Exception) {
+                deleteError = "Failed to delete cars: ${e.message}"
+                Log.e("GarageViewModel", "Error deleting cars", e)
+            }
+        }
+    }
+
+    // ✅ NEW - Update car order
+    fun updateCarOrder(cars: List<Car>) {
+        viewModelScope.launch {
+            try {
+                cars.forEachIndexed { index, car ->
+                    val updatedCar = car.copy(displayOrder = index)
+                    repository.updateCar(updatedCar)
+                }
+            } catch (e: Exception) {
+                deleteError = "Failed to update order: ${e.message}"
+                Log.e("GarageViewModel", "Error updating car order", e)
+            }
+        }
     }
 
     // ✅ NEW - Delete all car images (called during app data reset)

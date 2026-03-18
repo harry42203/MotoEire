@@ -23,4 +23,7 @@ class CarRepository(private val carDao: CarDao) {
     suspend fun deleteAllCars() {
         carDao.deleteAllCars()
     }
+    suspend fun deleteCars(carIds: List<Int>) {
+        carDao.deleteCars(carIds)
+    }
 }

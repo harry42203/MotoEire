@@ -7,24 +7,23 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-// ✅ Define migrations for each schema change
+// ✅ NEW - Migration from version 3 to 4 (add display_order column)
 private val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        // Example: Add a new column with a default value
-        // db.execSQL("ALTER TABLE cars ADD COLUMN new_field TEXT DEFAULT 'default_value'")
-        // This is just a placeholder - modify as needed for your changes
+        db.execSQL("ALTER TABLE cars ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0")
     }
 }
 
+// ✅ Placeholder migrations
 private val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        // Future migrations go here
+        // Future migrations
     }
 }
 
 @Database(
     entities = [Car::class],
-    version = 3,  // Keep at current version
+    version = 4,  // ✅ UPDATED TO 4
     exportSchema = false
 )
 abstract class GarageDatabase : RoomDatabase() {
@@ -42,9 +41,7 @@ abstract class GarageDatabase : RoomDatabase() {
                     GarageDatabase::class.java,
                     "garage_database"
                 )
-                    // ✅ Add migrations here as you make schema changes
                     .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
-                    // ✅ Keep this as a fallback, but only use it for dev
                     .fallbackToDestructiveMigration()
                     .build()
 

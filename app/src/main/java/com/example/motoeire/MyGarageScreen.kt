@@ -1,6 +1,7 @@
 package com.example.motoeire
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,13 +12,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.material3.ripple
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,34 +38,122 @@ fun MyGarageScreen(
     onSettingsClick: () -> Unit
 ) {
     val cars by viewModel.carsList.collectAsState()
+    val isSelectionMode by viewModel.isSelectionMode.collectAsState()
+    val selectedCars by viewModel.selectedCars.collectAsState()
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var sortedCars by remember(cars) { mutableStateOf(cars) }
+
+    // ✅ Delete confirmation dialog
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = {
+                Text(
+                    "Delete ${selectedCars.size} car${if (selectedCars.size > 1) "s" else ""}?",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text("This action cannot be undone.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteSelectedCars()
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
-            LargeTopAppBar(
-                title = {
-                    Text(
-                        "My Garage",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(
-                            imageVector = Icons.Outlined.Settings,
-                            contentDescription = "Settings"
+            if (isSelectionMode) {
+                // ✅ Selection mode top bar
+                TopAppBar(
+                    title = {
+                        Text(
+                            "${selectedCars.size} selected",
+                            fontWeight = FontWeight.Bold
                         )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { viewModel.toggleSelectionMode() }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Exit selection"
+                            )
+                        }
+                    },
+                    actions = {
+                        // ✅ Select all button
+                        IconButton(
+                            onClick = { viewModel.selectAllCars(cars.map { it.id }) }
+                        ) {
+                            Text("All", modifier = Modifier.padding(horizontal = 8.dp))
+                        }
+                        // ✅ Delete button
+                        IconButton(
+                            onClick = { showDeleteDialog = true },
+                            enabled = selectedCars.isNotEmpty()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete selected",
+                                tint = if (selectedCars.isNotEmpty())
+                                    MaterialTheme.colorScheme.error
+                                else
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                )
+            } else {
+                // ✅ Normal top bar
+                TopAppBar(
+                    title = {
+                        Text(
+                            "My Garage",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    },
+                    actions = {
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(
+                                imageVector = Icons.Outlined.Settings,
+                                contentDescription = "Settings"
+                            )
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddCarClick,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Car")
+            if (!isSelectionMode) {
+                FloatingActionButton(
+                    onClick = onAddCarClick,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Car")
+                }
             }
         }
     ) { paddingValues ->
@@ -104,9 +192,38 @@ fun MyGarageScreen(
             }
         } else {
             when (viewMode) {
-                ViewMode.GRID -> GridViewLayout(cars, paddingValues, onCarCardClick)
-                ViewMode.CARD -> CardViewLayout(cars, paddingValues, onCarCardClick)
-                ViewMode.LIST -> ListViewLayout(cars, paddingValues, onCarCardClick)
+                ViewMode.GRID -> GridViewLayout(
+                    cars = sortedCars,
+                    paddingValues = paddingValues,
+                    onCarCardClick = onCarCardClick,
+                    isSelectionMode = isSelectionMode,
+                    selectedCars = selectedCars,
+                    viewModel = viewModel
+                )
+                ViewMode.CARD -> CardViewLayout(
+                    cars = sortedCars,
+                    paddingValues = paddingValues,
+                    onCarCardClick = onCarCardClick,
+                    isSelectionMode = isSelectionMode,
+                    selectedCars = selectedCars,
+                    viewModel = viewModel,
+                    onOrderChanged = { newOrder ->
+                        viewModel.updateCarOrder(newOrder)
+                        sortedCars = newOrder
+                    }
+                )
+                ViewMode.LIST -> ListViewLayout(
+                    cars = sortedCars,
+                    paddingValues = paddingValues,
+                    onCarCardClick = onCarCardClick,
+                    isSelectionMode = isSelectionMode,
+                    selectedCars = selectedCars,
+                    viewModel = viewModel,
+                    onOrderChanged = { newOrder ->
+                        viewModel.updateCarOrder(newOrder)
+                        sortedCars = newOrder
+                    }
+                )
             }
         }
     }
@@ -116,7 +233,10 @@ fun MyGarageScreen(
 fun GridViewLayout(
     cars: List<Car>,
     paddingValues: PaddingValues,
-    onCarCardClick: (Int) -> Unit
+    onCarCardClick: (Int) -> Unit,
+    isSelectionMode: Boolean,
+    selectedCars: Set<Int>,
+    viewModel: GarageViewModel
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -130,7 +250,21 @@ fun GridViewLayout(
         items(cars, key = { car -> car.id }) { car ->
             CarGalleryCard(
                 car = car,
-                onClick = { onCarCardClick(car.id) }
+                onClick = {
+                    if (isSelectionMode) {
+                        viewModel.toggleCarSelection(car.id)
+                    } else {
+                        onCarCardClick(car.id)
+                    }
+                },
+                onLongPress = {
+                    if (!isSelectionMode) {
+                        viewModel.toggleSelectionMode()
+                        viewModel.toggleCarSelection(car.id)
+                    }
+                },
+                isSelectionMode = isSelectionMode,
+                isSelected = selectedCars.contains(car.id)
             )
         }
     }
@@ -140,8 +274,14 @@ fun GridViewLayout(
 fun CardViewLayout(
     cars: List<Car>,
     paddingValues: PaddingValues,
-    onCarCardClick: (Int) -> Unit
+    onCarCardClick: (Int) -> Unit,
+    isSelectionMode: Boolean,
+    selectedCars: Set<Int>,
+    viewModel: GarageViewModel,
+    onOrderChanged: (List<Car>) -> Unit
 ) {
+    var reorderedCars by remember(cars) { mutableStateOf(cars) }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -149,17 +289,87 @@ fun CardViewLayout(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(cars, key = { car -> car.id }) { car ->
-            CarWideCard(car = car, onClick = { onCarCardClick(car.id) })
+        items(reorderedCars, key = { car -> car.id }) { car ->
+            CarWideCardWithSelection(
+                car = car,
+                onClick = {
+                    if (isSelectionMode) {
+                        viewModel.toggleCarSelection(car.id)
+                    } else {
+                        onCarCardClick(car.id)
+                    }
+                },
+                onLongPress = {
+                    if (!isSelectionMode) {
+                        viewModel.toggleSelectionMode()
+                        viewModel.toggleCarSelection(car.id)
+                    }
+                },
+                isSelectionMode = isSelectionMode,
+                isSelected = selectedCars.contains(car.id),
+                onMove = { from, to ->
+                    val newList = reorderedCars.toMutableList()
+                    val item = newList.removeAt(from)
+                    newList.add(to, item)
+                    reorderedCars = newList
+                    onOrderChanged(newList)
+                }
+            )
         }
     }
 }
 
-// ✅ Wide Card Component for Card View (16:9)
 @Composable
-fun CarWideCard(
+fun ListViewLayout(
+    cars: List<Car>,
+    paddingValues: PaddingValues,
+    onCarCardClick: (Int) -> Unit,
+    isSelectionMode: Boolean,
+    selectedCars: Set<Int>,
+    viewModel: GarageViewModel,
+    onOrderChanged: (List<Car>) -> Unit
+) {
+    var reorderedCars by remember(cars) { mutableStateOf(cars) }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(reorderedCars, key = { car -> car.id }) { car ->
+            CarListItemWithSelection(
+                car = car,
+                onClick = {
+                    if (isSelectionMode) {
+                        viewModel.toggleCarSelection(car.id)
+                    } else {
+                        onCarCardClick(car.id)
+                    }
+                },
+                onLongPress = {
+                    if (!isSelectionMode) {
+                        viewModel.toggleSelectionMode()
+                        viewModel.toggleCarSelection(car.id)
+                    }
+                },
+                isSelectionMode = isSelectionMode,
+                isSelected = selectedCars.contains(car.id)
+            )
+        }
+    }
+}
+
+// ✅ Wide Card with selection
+@Composable
+fun CarWideCardWithSelection(
     car: Car,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongPress: () -> Unit,
+    isSelectionMode: Boolean,
+    isSelected: Boolean,
+    onMove: (Int, Int) -> Unit = { _, _ -> }
 ) {
     val statuses = getIndividualRenewalStatuses(
         insuranceDate = car.insuranceRenewalDate,
@@ -172,11 +382,19 @@ fun CarWideCard(
             .fillMaxWidth()
             .height(180.dp)
             .clip(RoundedCornerShape(16.dp))
-            .clickable(
+            .background(
+                if (isSelected)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                else
+                    Color.Transparent
+            )
+            .combinedClickable(
                 enabled = true,
                 indication = ripple(),
-                interactionSource = remember { MutableInteractionSource() }
-            ) { onClick() },
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+                onLongClick = onLongPress
+            ),
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Box {
@@ -199,12 +417,25 @@ fun CarWideCard(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
+                // ✅ Selection checkbox
+                if (isSelectionMode) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = null,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .size(24.dp)
+                    )
+                }
+
                 Text(
                     text = car.nickname,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
-                    modifier = Modifier.align(Alignment.TopStart)
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = if (isSelectionMode) 36.dp else 0.dp)
                 )
 
                 Text(
@@ -214,7 +445,6 @@ fun CarWideCard(
                     modifier = Modifier.align(Alignment.BottomStart)
                 )
 
-                // ✅ Show only issues or all ok
                 RenewalStatusColumn(
                     statuses = statuses,
                     modifier = Modifier.align(Alignment.TopEnd)
@@ -224,103 +454,14 @@ fun CarWideCard(
     }
 }
 
-@Composable
-fun ListViewLayout(
-    cars: List<Car>,
-    paddingValues: PaddingValues,
-    onCarCardClick: (Int) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(cars, key = { car -> car.id }) { car ->
-            CarListItem(car = car, onClick = { onCarCardClick(car.id) })
-        }
-    }
-}
-
-@Composable
-fun CarListItem(
-    car: Car,
-    onClick: () -> Unit
-) {
-    val renewalStatus = try {
-        getWorstRenewalStatus(
-            insuranceDate = car.insuranceRenewalDate,
-            nctDate = car.nctRenewalDate,
-            motorTaxDate = car.motorTaxRenewalDate
-        )
-    } catch (e: Exception) {
-        RenewalStatus.OK
-    }
-
-    val statusColor = when (renewalStatus) {
-        RenewalStatus.OK -> Color(0xFF4CAF50)
-        RenewalStatus.DUE_SOON -> Color(0xFFF57C00)
-        RenewalStatus.OVERDUE -> Color(0xFFD32F2F)
-    }
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(
-                enabled = true,
-                indication = ripple(),
-                interactionSource = remember { MutableInteractionSource() }
-            ) { onClick() },
-        color = MaterialTheme.colorScheme.surfaceVariant
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = car.nickname,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = car.registrationNumber,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Surface(
-                color = statusColor,
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text(
-                    text = when (renewalStatus) {
-                        RenewalStatus.OK -> "✓"
-                        RenewalStatus.DUE_SOON -> "!"
-                        RenewalStatus.OVERDUE -> "⚠"
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-        }
-    }
-}
-
-// ✅ Beautiful gallery card with image and status badges
+// ✅ Gallery card with selection
 @Composable
 fun CarGalleryCard(
     car: Car,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongPress: () -> Unit,
+    isSelectionMode: Boolean,
+    isSelected: Boolean
 ) {
     val statuses = getIndividualRenewalStatuses(
         insuranceDate = car.insuranceRenewalDate,
@@ -333,11 +474,19 @@ fun CarGalleryCard(
             .fillMaxWidth()
             .height(220.dp)
             .clip(RoundedCornerShape(16.dp))
-            .clickable(
+            .background(
+                if (isSelected)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                else
+                    Color.Transparent
+            )
+            .combinedClickable(
                 enabled = true,
                 indication = ripple(),
-                interactionSource = remember { MutableInteractionSource() }
-            ) { onClick() },
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+                onLongClick = onLongPress
+            ),
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Box {
@@ -365,15 +514,27 @@ fun CarGalleryCard(
                     .fillMaxSize()
                     .padding(12.dp)
             ) {
+                // ✅ Selection checkbox
+                if (isSelectionMode) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = null,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .size(24.dp)
+                    )
+                }
+
                 Text(
                     text = car.nickname,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
-                    modifier = Modifier.align(Alignment.TopStart)
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = if (isSelectionMode) 36.dp else 0.dp)
                 )
 
-                // ✅ Show only issues or all ok
                 RenewalStatusColumn(
                     statuses = statuses,
                     modifier = Modifier.align(Alignment.TopEnd)
@@ -390,14 +551,114 @@ fun CarGalleryCard(
     }
 }
 
-// ✅ NEW - Data class for individual renewal statuses
+// ✅ List item with selection
+@Composable
+fun CarListItemWithSelection(
+    car: Car,
+    onClick: () -> Unit,
+    onLongPress: () -> Unit,
+    isSelectionMode: Boolean,
+    isSelected: Boolean
+) {
+    val renewalStatus = try {
+        getWorstRenewalStatus(
+            insuranceDate = car.insuranceRenewalDate,
+            nctDate = car.nctRenewalDate,
+            motorTaxDate = car.motorTaxRenewalDate
+        )
+    } catch (e: Exception) {
+        RenewalStatus.OK
+    }
+
+    val statusColor = when (renewalStatus) {
+        RenewalStatus.OK -> Color(0xFF4CAF50)
+        RenewalStatus.DUE_SOON -> Color(0xFFF57C00)
+        RenewalStatus.OVERDUE -> Color(0xFFD32F2F)
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                if (isSelected)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                else
+                    Color.Transparent
+            )
+            .combinedClickable(
+                enabled = true,
+                indication = ripple(),
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+                onLongClick = onLongPress
+            ),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // ✅ Selection checkbox + Car info
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (isSelectionMode) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = car.nickname,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = car.registrationNumber,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Surface(
+                color = statusColor,
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Text(
+                    text = when (renewalStatus) {
+                        RenewalStatus.OK -> "✓"
+                        RenewalStatus.DUE_SOON -> "!"
+                        RenewalStatus.OVERDUE -> "⚠"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+        }
+    }
+}
+
 data class RenewalStatuses(
     val nctStatus: RenewalStatus,
     val taxStatus: RenewalStatus,
     val insuranceStatus: RenewalStatus
 )
 
-// ✅ NEW - Get individual statuses for each renewal type
 fun getIndividualRenewalStatuses(
     insuranceDate: Long,
     nctDate: Long,
@@ -410,13 +671,11 @@ fun getIndividualRenewalStatuses(
     )
 }
 
-// ✅ UPDATED - Only show issues (DUE_SOON or OVERDUE) or display "All OK"
 @Composable
 fun RenewalStatusColumn(
     statuses: RenewalStatuses,
     modifier: Modifier = Modifier
 ) {
-    // Get only the items that have issues
     val issues = listOfNotNull(
         if (statuses.nctStatus != RenewalStatus.OK) "NCT" to statuses.nctStatus else null,
         if (statuses.taxStatus != RenewalStatus.OK) "Tax" to statuses.taxStatus else null,
@@ -425,13 +684,12 @@ fun RenewalStatusColumn(
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalAlignment = Alignment.End
     ) {
         if (issues.isEmpty()) {
-            // ✅ Show "All OK" if no issues
             AllOkBadge()
         } else {
-            // ✅ Show only the issues
             issues.forEach { (label, status) ->
                 RenewalStatusBadge(label, status)
             }
@@ -439,7 +697,6 @@ fun RenewalStatusColumn(
     }
 }
 
-// ✅ NEW - "All OK" badge when everything is good
 @Composable
 fun AllOkBadge() {
     Surface(
@@ -467,7 +724,6 @@ fun AllOkBadge() {
     }
 }
 
-// ✅ Individual status badge with label and icon
 @Composable
 fun RenewalStatusBadge(
     label: String,
@@ -504,7 +760,6 @@ fun RenewalStatusBadge(
     }
 }
 
-// ✅ Status badge component (kept for backwards compatibility)
 @Composable
 fun StatusBadge(
     status: RenewalStatus,
@@ -560,11 +815,6 @@ fun formatTimestamp(millis: Long): String {
     val formatter = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
     return formatter.format(java.util.Date(millis))
 }
-
-enum class RenewalStatus {
-    OK, DUE_SOON, OVERDUE
-}
-
 fun checkRenewalStatus(dateMillis: Long): RenewalStatus {
     if (dateMillis == 0L) return RenewalStatus.OK
 
@@ -577,4 +827,8 @@ fun checkRenewalStatus(dateMillis: Long): RenewalStatus {
         diffDays in 0..30 -> RenewalStatus.DUE_SOON
         else -> RenewalStatus.OK
     }
+}
+
+enum class RenewalStatus {
+    OK, DUE_SOON, OVERDUE
 }

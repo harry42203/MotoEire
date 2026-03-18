@@ -310,25 +310,6 @@ fun EditCarScreen(
                     )
                 }
             )
-            OutlinedTextField(
-                value = editViewModel.policyNumber,
-                onValueChange = { newValue ->
-                    // ✅ NEW - Limit input to max length
-                    if (newValue.length <= AddCarViewModel.MAX_POLICY_NUMBER_LENGTH) {
-                        editViewModel.policyNumber = newValue
-                    }
-                },
-                label = { Text("Policy Number") },
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth(),
-                supportingText = {  // ✅ NEW - Show character count
-                    Text(
-                        text = "${editViewModel.policyNumber.length}/${AddCarViewModel.MAX_POLICY_NUMBER_LENGTH}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            )
 
             // ✅ NEW - Tax PIN Field (Edit Screen Only)
             OutlinedTextField(

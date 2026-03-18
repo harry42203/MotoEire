@@ -23,12 +23,16 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
     // ✅ NEW - Image path
     var imagePath by mutableStateOf<String?>(null)
 
+    // ✅ NEW - Tax PIN (for edit screen only)
+    var taxPin by mutableStateOf("")
+
     // ✅ NEW - Constants for validation
     companion object {
         const val MAX_NICKNAME_LENGTH = 50
         const val MAX_REGISTRATION_LENGTH = 20
         const val MAX_INSURANCE_PROVIDER_LENGTH = 50
         const val MAX_POLICY_NUMBER_LENGTH = 30
+        const val MAX_TAX_PIN_LENGTH = 20
     }
 
     fun clearFields() {
@@ -40,6 +44,7 @@ class AddCarViewModel(private val repository: CarRepository) : ViewModel() {
         nctDate = null
         motorTaxDate = null
         imagePath = null
+        taxPin = ""
         errorMessage = null  // ✅ NEW - Clear error too
     }
 

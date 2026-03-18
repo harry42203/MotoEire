@@ -26,6 +26,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.outlined.Lock
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +54,7 @@ fun EditCarScreen(
             editViewModel.nctDate = car.nctRenewalDate
             editViewModel.motorTaxDate = car.motorTaxRenewalDate
             editViewModel.imagePath = car.imagePath
+            editViewModel.taxPin = car.taxPin ?: ""
         }
     }
 
@@ -308,6 +310,54 @@ fun EditCarScreen(
                     )
                 }
             )
+            OutlinedTextField(
+                value = editViewModel.policyNumber,
+                onValueChange = { newValue ->
+                    // ✅ NEW - Limit input to max length
+                    if (newValue.length <= AddCarViewModel.MAX_POLICY_NUMBER_LENGTH) {
+                        editViewModel.policyNumber = newValue
+                    }
+                },
+                label = { Text("Policy Number") },
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {  // ✅ NEW - Show character count
+                    Text(
+                        text = "${editViewModel.policyNumber.length}/${AddCarViewModel.MAX_POLICY_NUMBER_LENGTH}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            )
+
+            // ✅ NEW - Tax PIN Field (Edit Screen Only)
+            OutlinedTextField(
+                value = editViewModel.taxPin,
+                onValueChange = { newValue ->
+                    // ✅ NEW - Limit input to max length
+                    if (newValue.length <= AddCarViewModel.MAX_TAX_PIN_LENGTH) {
+                        editViewModel.taxPin = newValue
+                    }
+                },
+                label = { Text("Tax PIN (Optional)") },
+                placeholder = { Text("e.g. 1234567890") },
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Lock,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                supportingText = {  // ✅ NEW - Show character count
+                    Text(
+                        text = "${editViewModel.taxPin.length}/${AddCarViewModel.MAX_TAX_PIN_LENGTH}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            )
 
             // Date Pickers
             DatePickerField(
@@ -378,7 +428,8 @@ fun EditCarScreen(
                         insuranceRenewalDate = editViewModel.insuranceRenewalDate ?: 0L,
                         nctRenewalDate = editViewModel.nctDate ?: 0L,
                         motorTaxRenewalDate = editViewModel.motorTaxDate ?: 0L,
-                        imagePath = editViewModel.imagePath
+                        imagePath = editViewModel.imagePath,
+                        taxPin = editViewModel.taxPin.ifBlank { null }
                     )
 
                     // Save to database

@@ -10,6 +10,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,6 +29,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import coil.compose.AsyncImage
 import java.util.concurrent.TimeUnit
 
@@ -46,6 +49,9 @@ fun DetailsScreen(
 
     // ✅ NEW - Delete confirmation dialog state
     var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // ✅ NEW - Clipboard feedback snackbar
+    val snackbarHostState = remember { SnackbarHostState() }
 
     if (car == null) {
         // Car not found
@@ -71,6 +77,11 @@ fun DetailsScreen(
                 showDeleteDialog = false
             }
         )
+    }
+
+    // ✅ NEW - Handle system back button
+    BackHandler {
+        onNavigateBack()
     }
 
     Scaffold(
@@ -105,7 +116,8 @@ fun DetailsScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }  // ✅ NEW
     ) { paddingValues ->
 
         Column(
@@ -170,9 +182,21 @@ fun DetailsScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        DetailRow(label = "Registration", value = car.registrationNumber)
+                        // ✅ NEW - Make Registration copyable
+                        CopyableDetailRow(
+                            label = "Registration",
+                            value = car.registrationNumber,
+                            snackbarHostState = snackbarHostState,
+                            context = context
+                        )
                         DetailRow(label = "Insurance Provider", value = car.insuranceProvider)
-                        DetailRow(label = "Policy Number", value = car.insurancePolicyNumber)
+                        // ✅ NEW - Make Policy Number copyable
+                        CopyableDetailRow(
+                            label = "Policy Number",
+                            value = car.insurancePolicyNumber,
+                            snackbarHostState = snackbarHostState,
+                            context = context
+                        )
                     }
                 }
 
@@ -214,6 +238,26 @@ fun DetailsScreen(
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
+
+                // ✅ NEW - Tax PIN Display (if available)
+                if (!car.taxPin.isNullOrEmpty()) {
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CopyableDetailRow(
+                                label = "Tax PIN",
+                                value = car.taxPin!!,
+                                snackbarHostState = snackbarHostState,
+                                context = context
+                            )
+                        }
+                    }
+                }
 
                 RenewalDetailCard(
                     icon = Icons.Outlined.CalendarMonth,
@@ -291,7 +335,9 @@ fun DetailRow(
     value: String
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -306,6 +352,54 @@ fun DetailRow(
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
+    }
+}
+
+// ✅ NEW - Copyable Detail Row with clipboard functionality
+@Composable
+fun CopyableDetailRow(
+    label: String,
+    value: String,
+    snackbarHostState: SnackbarHostState,
+    context: Context
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(enabled = value.isNotEmpty()) {
+                // ✅ Copy to clipboard
+                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                        as android.content.ClipboardManager
+                val clip = android.content.ClipData.newPlainText("Copied", value)
+                clipboard.setPrimaryClip(clip)
+            }
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Icon(
+                imageVector = Icons.Outlined.ContentCopy,
+                contentDescription = "Copy to clipboard",
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

@@ -3,6 +3,7 @@ package com.example.motoeire
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,7 +47,7 @@ fun MyGarageScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var sortedCars by remember(cars) { mutableStateOf(cars) }
 
-    // ✅ NEW - Handle back button to exit selection mode
+    // ✅ Handle back button to exit selection mode
     BackHandler(enabled = isSelectionMode) {
         viewModel.toggleSelectionMode()
     }
@@ -301,6 +303,8 @@ fun CardViewLayout(
 
             CarWideCardWithSelection(
                 car = car,
+                index = index,
+                totalItems = reorderedCars.size,
                 onClick = {
                     if (isSelectionMode) {
                         viewModel.toggleCarSelection(car.id)
@@ -322,11 +326,15 @@ fun CardViewLayout(
                     draggedItemIndex = null
                     onOrderChanged(reorderedCars)
                 },
-                onMove = { toIndex ->
-                    val newList = reorderedCars.toMutableList()
-                    val item = newList.removeAt(index)
-                    newList.add(toIndex, item)
-                    reorderedCars = newList
+                onReorder = { fromIndex, toIndex ->
+                    // ✅ FIX - Add bounds checking
+                    if (toIndex >= 0 && toIndex < reorderedCars.size) {
+                        val newList = reorderedCars.toMutableList()
+                        val item = newList.removeAt(fromIndex)
+                        newList.add(toIndex, item)
+                        reorderedCars = newList
+                        draggedItemIndex = toIndex
+                    }
                 }
             )
         }
@@ -358,6 +366,8 @@ fun ListViewLayout(
 
             CarListItemWithSelection(
                 car = car,
+                index = index,
+                totalItems = reorderedCars.size,
                 onClick = {
                     if (isSelectionMode) {
                         viewModel.toggleCarSelection(car.id)
@@ -379,21 +389,27 @@ fun ListViewLayout(
                     draggedItemIndex = null
                     onOrderChanged(reorderedCars)
                 },
-                onMove = { toIndex ->
-                    val newList = reorderedCars.toMutableList()
-                    val item = newList.removeAt(index)
-                    newList.add(toIndex, item)
-                    reorderedCars = newList
+                onReorder = { fromIndex, toIndex ->
+                    // ✅ FIX - Add bounds checking
+                    if (toIndex >= 0 && toIndex < reorderedCars.size) {
+                        val newList = reorderedCars.toMutableList()
+                        val item = newList.removeAt(fromIndex)
+                        newList.add(toIndex, item)
+                        reorderedCars = newList
+                        draggedItemIndex = toIndex
+                    }
                 }
             )
         }
     }
 }
 
-// ✅ Wide Card with selection and drag support
+// ✅ Wide Card with drag support (only in selection mode)
 @Composable
 fun CarWideCardWithSelection(
     car: Car,
+    index: Int,
+    totalItems: Int,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     isSelectionMode: Boolean,
@@ -401,13 +417,15 @@ fun CarWideCardWithSelection(
     isDragging: Boolean = false,
     onDragStart: () -> Unit = {},
     onDragEnd: () -> Unit = {},
-    onMove: (Int) -> Unit = {}
+    onReorder: (Int, Int) -> Unit = { _, _ -> }
 ) {
     val statuses = getIndividualRenewalStatuses(
         insuranceDate = car.insuranceRenewalDate,
         nctDate = car.nctRenewalDate,
         motorTaxDate = car.motorTaxRenewalDate
     )
+
+    var dragOffset by remember { mutableStateOf(0f) }
 
     Surface(
         modifier = Modifier
@@ -421,6 +439,29 @@ fun CarWideCardWithSelection(
                     else -> Color.Transparent
                 }
             )
+            .pointerInput(isSelectionMode) {
+                if (isSelectionMode) {
+                    detectDragGestures(
+                        onDragStart = {
+                            onDragStart()
+                            dragOffset = 0f
+                        },
+                        onDragEnd = {
+                            onDragEnd()
+                        },
+                        onDrag = { change, dragAmount ->
+                            dragOffset += dragAmount.y
+                            if (dragOffset > 100 && index < totalItems - 1) {
+                                onReorder(index, index + 1)
+                                dragOffset = 0f
+                            } else if (dragOffset < -100 && index > 0) {
+                                onReorder(index, index - 1)
+                                dragOffset = 0f
+                            }
+                        }
+                    )
+                }
+            }
             .combinedClickable(
                 enabled = true,
                 indication = ripple(),
@@ -585,10 +626,12 @@ fun CarGalleryCard(
     }
 }
 
-// ✅ List item with selection and drag support
+// ✅ List item with drag support (only in selection mode)
 @Composable
 fun CarListItemWithSelection(
     car: Car,
+    index: Int,
+    totalItems: Int,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     isSelectionMode: Boolean,
@@ -596,7 +639,7 @@ fun CarListItemWithSelection(
     isDragging: Boolean = false,
     onDragStart: () -> Unit = {},
     onDragEnd: () -> Unit = {},
-    onMove: (Int) -> Unit = {}
+    onReorder: (Int, Int) -> Unit = { _, _ -> }
 ) {
     val renewalStatus = try {
         getWorstRenewalStatus(
@@ -614,6 +657,8 @@ fun CarListItemWithSelection(
         RenewalStatus.OVERDUE -> Color(0xFFD32F2F)
     }
 
+    var dragOffset by remember { mutableStateOf(0f) }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -626,6 +671,29 @@ fun CarListItemWithSelection(
                     else -> Color.Transparent
                 }
             )
+            .pointerInput(isSelectionMode) {
+                if (isSelectionMode) {
+                    detectDragGestures(
+                        onDragStart = {
+                            onDragStart()
+                            dragOffset = 0f
+                        },
+                        onDragEnd = {
+                            onDragEnd()
+                        },
+                        onDrag = { change, dragAmount ->
+                            dragOffset += dragAmount.y
+                            if (dragOffset > 50 && index < totalItems - 1) {
+                                onReorder(index, index + 1)
+                                dragOffset = 0f
+                            } else if (dragOffset < -50 && index > 0) {
+                                onReorder(index, index - 1)
+                                dragOffset = 0f
+                            }
+                        }
+                    )
+                }
+            }
             .combinedClickable(
                 enabled = true,
                 indication = ripple(),
